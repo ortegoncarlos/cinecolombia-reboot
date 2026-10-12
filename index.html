@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.9/cdn.min.js" defer></script>
 </head>
 <body>
-<div x-data="feed()">
+<div x-data="feed()" :class="dim && !searching && !$store.city.open && 'dim'" @pointerdown="wake()" @focusin="wake()">
   <h1 class="sr">Cine Colombia: cartelera, preventa y estrenos</h1>
   <header class="top" x-ref="top">
     <div class="bar">
@@ -41,9 +41,9 @@
     </nav>
   </header>
 
-  <main class="feed" x-ref="feed" aria-label="Películas">
+  <main class="feed" x-ref="feed" aria-label="Películas" @scroll.passive="wake()">
     <template x-for="(it, i) in queue.slice(0, n)" :key="gen + it.key">
-      <article class="card" :class="{ on: i === active, play: i === active && playing, plain: !it.f && !it.p, vert: !!tok(i) }" :data-i="i" x-init="obs($el)">
+      <article class="card" :class="{ on: i === active, play: i === active && playing, wait: i === active && wait, plain: !it.f && !it.p, vert: !!tok(i) }" :data-i="i" x-init="obs($el)">
 
         <template x-if="it.type === 'film'"><div style="display:contents">
           <div class="media" :class="fs && i === active && 'is-fs'">
@@ -60,6 +60,7 @@
             <template x-for="k in (i === vid || i === pre) && key(i) ? [key(i)] : []" :key="k">
               <iframe class="yt" x-init="mk($el, i)" @load="ytLoad($el)" title="Trailer" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true"></iframe>
             </template>
+            <button class="disc big" x-show="i === active && wait === 1" @click="tapPlay()" aria-label="Reproducir"><svg viewBox="0 0 24 24"><path d="M7 4.5v15L19.5 12z"/></svg></button>
             <template x-if="fs && i === active">
               <div class="fsc" @keydown.escape.window="fsOff()">
                 <button class="disc x" @click="fsOff()" aria-label="Cerrar pantalla completa"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>

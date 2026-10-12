@@ -7,7 +7,6 @@
   --tabbar:calc(60px + env(safe-area-inset-bottom));
   --top-h:calc(102px + env(safe-area-inset-top)); /* feed header: 10 pad + 44 bar + 4 gap + 44 tabs */
   --tt-chrome:80px; /* TikTok player's top chrome (avatar, name, logo), pushed above the media box */
-  --tt-side:76px; /* TikTok's right-hand like/comment rail, pushed past the right edge */
   --font:"Roboto",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
   color-scheme:dark;
 }
@@ -107,7 +106,7 @@ h1,h2,h3,p{margin:0}
 .card.vert{justify-content:flex-end}
 .card.vert .media{position:absolute;inset:var(--top-h) 0 var(--tabbar)}
 .card.vert .media::after{height:55%}
-.media .tk{--h:calc(100cqh + var(--tt-chrome));--w:calc(100cqw + var(--tt-side));top:calc(50% - var(--tt-chrome)/2);left:calc(50% + var(--tt-side)/2);width:max(var(--w),var(--h)*9/16);height:max(var(--h),var(--w)*16/9);scale:1.02} /* 9:16 cover, top edge at -chrome; settles to 1 on reveal */
+.media .tk{--h:calc(100cqh + var(--tt-chrome));top:calc(50% - var(--tt-chrome)/2);width:max(100cqw,var(--h)*9/16);height:max(var(--h),100cqw*16/9);scale:1.02} /* 9:16 cover, top edge at -chrome; settles to 1 on reveal */
 .tk-mark{width:56px;height:56px;margin:auto;opacity:.5}
 .btn.sec2{background:var(--chip);border:1px solid var(--line)}
 .card:not(.on) .tk{visibility:hidden}
@@ -117,9 +116,16 @@ h1,h2,h3,p{margin:0}
 .card .media.is-fs{position:fixed;inset:0;z-index:30;background:#000}
 .is-fs::before,.is-fs::after,.is-fs>:not(.yt,.fsc){display:none}
 .is-fs .yt{width:min(100cqw,100cqh*16/9);height:min(100cqh,100cqw*9/16);scale:1;pointer-events:auto}
-.is-fs .tk{top:50%;left:50%;width:min(100cqw,100cqh*9/16);height:min(100cqh,100cqw*16/9)}
+.is-fs .tk{top:50%;width:min(100cqw,100cqh*9/16);height:min(100cqh,100cqw*16/9)}
 body:has(.is-fs) :is(.top,.tabbar){display:none}
 .fsc button{pointer-events:auto}
+/* autoplay blocked: big play control; the player shows its own poster/button and takes taps (scrim shield off) */
+.media .big{inset:auto;left:50%;top:50%;translate:-50% -50%;z-index:2;width:64px;height:64px;pointer-events:auto}
+.media .big svg{width:30px;height:30px;fill:#fff;stroke:none;margin-left:3px}
+.card.wait .yt{opacity:1;pointer-events:auto}
+.card.wait .scrim{pointer-events:none}
+/* vertical cards: a frosted strip behind the rail blurs TikTok's own like/comment/share icons instead of cropping the video */
+.card.vert .rail::before{content:"";position:absolute;z-index:-1;inset:-36px -10px -48px;border-radius:28px;background:rgba(0,0,0,.22);-webkit-backdrop-filter:blur(18px) saturate(.9);backdrop-filter:blur(18px) saturate(.9)}
 .fsc{z-index:2;display:flex;align-items:flex-end;gap:12px;padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
 .fsc .x{position:absolute;top:calc(12px + env(safe-area-inset-top));right:12px}
 .fsc::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:#fff;transform-origin:left;transform:scaleX(var(--t,0));transition:transform .3s linear}
@@ -204,6 +210,18 @@ body:has(.is-fs) :is(.top,.tabbar){display:none}
   .feed .info .btn{min-height:44px}
   .feed .rail{bottom:calc(var(--tabbar) + 28px);gap:12px}
 }
+@media (max-width:1023px){
+  /* rail: bare icons + labels over the video (44px target kept), CTA as a quiet chip */
+  .feed .rail button{text-shadow:0 1px 3px rgba(0,0,0,.7)}
+  .feed .rail .disc,.feed .rail [aria-pressed=true] .disc{background:none;border:0}
+  .feed .rail .disc svg{filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
+  .feed .info .btn{width:auto;align-self:flex-start;min-height:44px;padding:0 16px;background:rgba(0,0,0,.45);border:1px solid var(--line);font-size:15px}
+  .feed .info .btn:active{background:rgba(255,255,255,.16)}
+  /* clear mode: the card's lower block dims over the playing trailer; transition only into .dim so restoring is instant */
+  .dim .card.on .info>:not(.btn),.dim .card.on>.next{opacity:.35;transition:opacity .6s ease}
+  .dim .card.on :is(.info .btn,.rail .disc){opacity:.6;transition:opacity .6s ease}
+  .dim .card.on .rail button{color:rgb(255 255 255/.35);transition:color .6s ease}
+}
 @media (hover:hover) and (pointer:fine){
   .pill:hover,.icon-btn:hover,.rail button:hover .disc{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.28)}
   .pill.ghost:hover{color:var(--fg)}
@@ -260,6 +278,7 @@ body:has(.is-fs) :is(.top,.tabbar){display:none}
   .feed .meta{font-size:15px}
   .feed .info .btn{grid-column:3;grid-row:1/span 6;width:auto;margin:0;padding:0 24px}
   .feed .rail{position:static;grid-column:2;align-self:center;flex-direction:row;gap:12px}
+  .feed .card.vert .rail::before{display:none}
   /* vertical (TikTok) media: 9:16 stage, info to its left */
   .feed .card.vert{width:auto;height:100%;align-self:stretch;align-content:stretch;grid-template-columns:380px auto;grid-template-rows:minmax(0,1fr) auto;column-gap:40px}
   .feed .card.vert .media{position:relative;inset:auto;grid-column:2;grid-row:1/span 2;width:auto;height:100%;aspect-ratio:9/16}
