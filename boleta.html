@@ -85,8 +85,8 @@
         <dl class="tot"><dt>Total</dt><dd x-text="cop(total)"></dd></dl>
       </div>
       <h2 class="sec" id="h-m">Medio de pago</h2>
-      <div class="methods" role="radiogroup" aria-labelledby="h-m">
-        <template x-for="m in METHODS" :key="m"><button type="button" role="radio" :aria-checked="method === m" @click="method = m" x-text="m"></button></template>
+      <div class="methods" role="radiogroup" aria-labelledby="h-m" @keydown="tabKeys($event)">
+        <template x-for="m in METHODS" :key="m"><button type="button" role="radio" :aria-checked="method === m" :tabindex="method === m ? 0 : -1" @click="method = m" x-text="m"></button></template>
       </div>
       <p class="muted">Prototipo: no se cobra nada ni se piden datos de pago.</p>
     </section>
@@ -109,7 +109,7 @@
       <p class="hold" x-show="left" role="timer" aria-live="off">Tus sillas se liberan en <b x-text="mmss"></b></p>
       <div class="sbar-r">
         <div class="sbar-t">
-          <span x-text="sel.length ? sel.length + (sel.length === 1 ? ' silla' : ' sillas') + ' · ' + seatText : 'Toca una silla libre para empezar'"></span>
+          <span x-text="sel.length ? sel.length + (sel.length === 1 ? ' silla' : ' sillas') + ' · ' + seatText : 'Elige una silla libre para empezar'"></span>
           <b x-text="sel.length ? cop(total) : ''"></b>
         </div>
         <button class="btn" x-show="step === 'seats'" :disabled="!sel.length" @click="go('tickets')">Continuar</button>

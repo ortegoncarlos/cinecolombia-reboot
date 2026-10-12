@@ -11,19 +11,17 @@
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Multiplex Cine Colombia"><meta name="twitter:description" content="Multiplex de Cine Colombia en tu ciudad: dirección, cómo llegar y funciones."><meta name="twitter:image" content="https://ortegoncarlos.github.io/cinecolombia-reboot/assets/og.jpg">
 <meta name="theme-color" content="#000">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%230070bd'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='18' fill='%23fff' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://image.tmdb.org">
 <link rel="preload" href="data/cities.json" as="fetch" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="assets/app.css">
 <link rel="stylesheet" href="assets/multiplex.css">
 <script src="assets/app.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.9/cdn.min.js" defer></script>
 </head>
-<body>
+<body data-nav="multiplex">
 <main class="mxpage page" x-data="mxp()">
-  <div class="amb" aria-hidden="true" x-show="bg.length"><template x-for="b in bg" :key="b"><img :src="imgSize(b, 'w780')" alt=""></template></div>
+  <div class="amb" aria-hidden="true" x-show="bg.length"><template x-for="b in bg" :key="b"><img :src="imgSize(b, innerWidth < 768 ? 'w300' : 'w780')" alt=""></template></div>
   <div class="bar">
     <a href="index.html" class="logo-link"><img class="logo" src="assets/logo-blanco.png" alt="Cine Colombia" width="108" height="28"></a>
     <button class="pill" x-show="!id" @click="$store.city.open = true" :aria-label="'Elige tu ciudad' + ($store.city.cur ? ', actual ' + $store.city.cur.name : '')">
@@ -44,8 +42,8 @@
               <span class="sl-go"><small x-show="$store.geo.km(s)" x-text="$store.geo.km(s)"></small><span class="sl-l">Ver funciones</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
             </a>
             <div class="strip" x-show="(lmap[s.id] || []).length">
-              <template x-for="f in (lmap[s.id] || []).slice(0, 12)" :key="f.id">
-                <a class="tile" :href="'multiplex.html?id=' + s.id + '&film=' + f.id" :aria-label="'Funciones de ' + f.title + (f.tag ? ', ' + f.tag.toLowerCase() : '')"><img loading="lazy" decoding="async" width="84" height="126" :src="f.p" alt=""><i x-show="f.tag"></i></a>
+              <template x-for="(f, j) in (lmap[s.id] || []).slice(0, 12)" :key="f.id">
+                <a class="tile" :data-more="j === 5 && lmap[s.id].length > 6 ? '+' + (lmap[s.id].length - 5) : null" :href="'multiplex.html?id=' + s.id + '&film=' + f.id" :aria-label="'Funciones de ' + f.title + (f.tag ? ', ' + f.tag.toLowerCase() : '')"><img loading="lazy" decoding="async" width="84" height="126" :src="f.p" alt=""><i x-show="f.tag"></i></a>
               </template>
               <a class="tile more" x-show="(lmap[s.id] || []).length > 12" :href="'multiplex.html?id=' + s.id" x-text="'+' + ((lmap[s.id] || []).length - 12) + ' más'"></a>
             </div>
@@ -74,10 +72,9 @@
 
           <section class="sched" x-show="ready && !closed" aria-labelledby="h-hor">
             <h2 class="sec" id="h-hor">Horarios</h2>
-            <div class="dates" role="tablist" aria-label="Día">
+            <div class="dates" role="tablist" aria-label="Día" @keydown="tabKeys($event)">
               <template x-for="(d, i) in WEEK" :key="d">
                 <button class="date" role="tab" :id="'d' + i" aria-controls="sched" :class="{ none: D[i] && !D[i].length, unk: !D[i] }" :aria-selected="sel === i" :tabindex="sel === i ? 0 : -1" @click="pick(i)"
-                  @keydown.arrow-right.prevent="$el.nextElementSibling && $el.nextElementSibling.focus()" @keydown.arrow-left.prevent="$el.previousElementSibling && $el.previousElementSibling.focus && $el.previousElementSibling.focus()"
                   :aria-label="fmtDate(d).label + ' ' + fmtDate(d).day + (D[i] && !D[i].length ? ', sin funciones' : '')"><small x-text="fmtDate(d).label"></small><b x-text="fmtDate(d).day"></b></button>
               </template>
             </div>
@@ -86,7 +83,7 @@
               <div class="chips" x-show="attrs.length || isToday || film" role="group" aria-label="Filtrar funciones">
                 <button class="chip" x-show="film" aria-pressed="true" @click="clearFilm()" :aria-label="'Quitar filtro: ' + filmTitle"><span x-text="filmTitle"></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
                 <button class="chip" x-show="isToday" :aria-pressed="now + ''" @click="now = !now"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Ahora</button>
-                <template x-for="a in attrs" :key="a"><button class="chip" :aria-pressed="f.includes(a) + ''" @click="f = f.includes(a) ? f.filter(x => x !== a) : [...f, a]" x-text="a"></button></template>
+                <template x-for="a in attrs" :key="a"><button class="chip" :aria-pressed="f.includes(a) + ''" @click="f = f.includes(a) ? f.filter(x => x !== a) : [...f, a]" x-text="attrLabel(a)"></button></template>
               </div>
 
               <section class="nx" x-show="next.length" aria-labelledby="h-nx">
@@ -135,10 +132,10 @@
   <a href="multiplex.html" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Multiplex</a>
 </nav>
 <script>
-// Page component (app.js keeps the older mx(); this page owns its own logic).
+// Page component: multiplex list (no ?id) or one multiplex's week of showtimes.
 function mxp() {
   const hm = () => new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(typeof appNow === 'function' ? appNow() : new Date()); // app clock (frozen in demos)
-  const ORDER = ['2D', '3D', 'SUB', 'DOB', 'ESP', 'Dinamix', 'Megasala', 'Imax', 'IFV', 'Onyx'], LANG = ['SUB', 'DOB', 'ESP'], BASE = { '2D': 12000, '3D': 18000, Dinamix: 18000, Megasala: 24000, Imax: 24000, Onyx: 32000 };
+  const LANG = ['DOB', 'SUB', 'ESP'], ORDER = [...LANG, '3D', 'Dinamix', 'Megasala', 'Imax', 'IFV', 'Onyx', '2D'], BASE = { '2D': 12000, '3D': 18000, Dinamix: 18000, Megasala: 24000, Imax: 24000, Onyx: 32000 };
   const rank = a => (ORDER.indexOf(a) + 1) || 99;
   const tidy = s => s.toLowerCase().replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase()).replace(/ (Del|De|La|Las|Los|Y) /g, w => w.toLowerCase()).replace(/^Cc /, 'CC ');
   const byTime = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
@@ -205,10 +202,10 @@ function mxp() {
     get alt() { const a = this.D.map((d, k) => (d && d.length ? k : -1)).filter(k => k >= 0); return a.find(k => k > this.sel) ?? a.pop() ?? -1; },
     past(s) { return this.isToday && s.time < this.t; },
     rel(time) { const [h, m] = time.split(':'), [H, M] = this.t.split(':'), n = (h - H) * 60 + (m - M); return n >= 0 && n < 90 ? 'en ' + n + ' min' : ''; },
-    get attrs() {
-      const all = new Set(), sig = new Set();
-      (this.D[this.sel] || []).forEach(g => g.times.forEach(s => { s.attrs.forEach(a => all.add(a)); sig.add(s.attrs.join()); }));
-      return sig.size > 1 ? [...all].sort((a, b) => rank(a) - rank(b)) : []; // nothing to filter when every function is the same format
+    get attrs() { // same rule as pelicula.html: only the formats/languages that split the day
+      const n = {}, r = (this.D[this.sel] || []).flatMap(g => g.times);
+      r.forEach(s => s.attrs.forEach(a => { n[a] = (n[a] || 0) + 1; }));
+      return Object.keys(n).filter(a => n[a] < r.length).sort((a, b) => rank(a) - rank(b));
     },
     ok(s) {
       if (this.now && this.past(s)) return false;

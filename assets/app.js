@@ -53,6 +53,9 @@ function filmTag(f) {
 }
 // Hidden films (data flag) never show anywhere: feed, search, detail, multiplex schedules. Filter every film list through this.
 const listed = f => !!f && !f.hidden;
+// One spelling per format/language everywhere: the data mixes "Subtitulado" (films) with SUB/DOB codes (showtimes).
+const ATTR = { Subtitulado: 'Subtitulada', SUB: 'Subtitulada', DOB: 'Doblada', ESP: 'Español', Imax: 'IMAX', IFV: 'Infinity Vision' };
+const attrLabel = a => ATTR[a] || a;
 function metaLine(f) { return [fmtRuntime(f.runtime), f.genres.join(', ')].filter(Boolean).join(' · '); }
 function imgSize(url, size) { return url && url.replace(/(image\.tmdb\.org\/t\/p\/)w\d+/, '$1' + size); }
 // Background embeds start muted (so autoplay is allowed); sound is toggled via the iframe API (ytCmd).
@@ -81,32 +84,26 @@ const mapsUrl = s => (/Mac|iPhone|iPad/.test(navigator.platform || navigator.use
 // ponytail: snapshot ends 2026-10-17 (see README); later days read as empty without a 404. Update with the data.
 const LAST_DAY = '2026-10-17';
 const loadDay = (city, i) => WEEK[i] > LAST_DAY ? Promise.resolve({}) : loadJSON('data/showtimes/' + city + '/' + WEEK[i] + '.json');
-// Alpine mixin for detail/multiplex: needs has(i); call first(city) and $watch('sel', i => this.day(i)). Stale cities dropped.
-const showDays = {
-  week: [], sel: 0, city: null,
-  async day(i) {
-    const c = this.city, d = await loadDay(c, i);
-    if (c === this.city) this.week[i] = d;
-  },
-  async first(c) { // first day with showtimes: usually 1-2 requests
-    this.city = c; this.week = []; this.sel = 0;
-    for (let i = 0; c && i < 7; i++) { await this.day(i); if (c !== this.city) return; if (this.has(i)) return void (this.sel = i); }
-  }
-};
 // New day in Bogotá: TODAY/WEEK are stale.
 if (!DEMO_NOW) document.addEventListener('visibilitychange', () => document.hidden || isoDateInBogota() === TODAY || location.reload());
 
+// The live region exists before the first message (screen readers skip text injected with the region); hover/focus keeps it open.
+const toastEl = Object.assign(document.createElement('div'), { id: 'toast', className: 'toast' });
+toastEl.setAttribute('role', 'status');
+document.body.append(toastEl);
+const toastOff = () => { toastEl.classList.remove('on'); const b = toastEl.querySelector('button'); if (b) b.remove(); }; // no invisible focusable action
+['pointerenter', 'focusin'].forEach(k => toastEl.addEventListener(k, () => clearTimeout(toast.t)));
+['pointerleave', 'focusout'].forEach(k => toastEl.addEventListener(k, () => { toast.t = setTimeout(toastOff, 2000); }));
 function toast(msg, action, ms = 2200) {
-  let t = document.getElementById('toast');
-  if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; t.setAttribute('role', 'status'); document.body.append(t); }
+  const t = toastEl;
   t.textContent = msg;
   if (action) {
     const b = document.createElement('button');
-    b.textContent = action[0]; b.onclick = () => { t.classList.remove('on'); action[1](); };
+    b.textContent = action[0]; b.onclick = () => { toastOff(); action[1](); };
     t.append(' · ', b);
   }
   t.classList.add('on');
-  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), ms);
+  clearTimeout(toast.t); toast.t = setTimeout(toastOff, ms);
 }
 // Nearest city to the visitor's IP location (kept to sort multiplex); Bogotá when the lookup fails, takes > 3 s, or nothing is within 150 km.
 async function guessCity(list) {
@@ -125,6 +122,15 @@ const SITE_URL = 'https://ortegoncarlos.github.io/cinecolombia-reboot'; // share
 async function shareFilm(f, url = SITE_URL + '/s/' + f.id + '/') {
   if (navigator.share) { try { await navigator.share({ title: f.title, text: f.shortSynopsis || f.title, url }); } catch (e) { /* cancelled */ } return; }
   try { await navigator.clipboard.writeText(url); toast('Enlace copiado'); } catch (e) { toast(url); }
+}
+
+// Tablists (feed sections, search chips, day strips) and radio groups (payment): arrows/Home/End move and select;
+// only the selected item is tabbable (roving tabindex in the markup).
+function tabKeys(e) {
+  const tabs = [...e.currentTarget.querySelectorAll('[role=tab],[role=radio]')], i = tabs.indexOf(document.activeElement), r = tabs.length && tabs[0].getAttribute('role') === 'radio';
+  const n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1, ...(r && { ArrowDown: i + 1, ArrowUp: i - 1 }) }[e.key];
+  if (i < 0 || n == null || !tabs[n]) return;
+  e.preventDefault(); tabs[n].focus(); tabs[n].click();
 }
 
 // City sheet: page behind is inert, focus goes to the current city and back to the opener on close.
@@ -168,6 +174,8 @@ document.addEventListener('alpine:init', () => {
     pick(slug) { this.slug = slug; ls.set('cineco.city', slug); this.open = false; }
   });
 
+  Alpine.store('shell', { cur: document.body.dataset.nav || '' }); // desktop app bar: current section
+
   Alpine.store('geo', {
     pos: null, busy: false,
     init() { try { this.pos = JSON.parse(ls.get('cineco.geo')); } catch (e) { /* corrupt */ } },
@@ -196,18 +204,34 @@ const SECTIONS = {
 };
 const altLabel = f => 'Cineco Alternativo' + (f.event ? ' · ' + f.event : '');
 
+// Desktop app bar (≥1024px; display:none below, so the mobile pages are untouched). On the feed, the section links
+// only change the hash (feed() listens) and search opens the browse overlay; elsewhere they open index.html#….
+const DESK = matchMedia('(min-width:1024px)');
+document.body.insertAdjacentHTML('afterbegin', `
+<header class="dbar" x-data><div class="dbar-in">
+  <a class="dbar-logo" href="index.html"><img class="logo" src="assets/logo-blanco.png" alt="Cine Colombia" width="108" height="28" loading="lazy"></a>
+  <nav class="dnav" aria-label="Principal">${[...Object.keys(SECTIONS), 'multiplex'].map(t =>
+    `<a href="${t === 'multiplex' ? 'multiplex.html' : 'index.html#' + t}" :aria-current="$store.shell.cur === '${t}' && 'page'">${t === 'multiplex' ? 'Multiplex' : SECTIONS[t][0]}</a>`).join('')}</nav>
+  <button class="pill" @click="$store.city.open = true" :aria-label="'Elige tu ciudad' + ($store.city.cur ? ', actual ' + $store.city.cur.name : '')">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+    <span x-text="$store.city.cur ? $store.city.cur.name : 'Elige tu ciudad'">Elige tu ciudad</span>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <a class="icon-btn" href="index.html#buscar" data-search aria-label="Buscar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></a>
+</div></header>`);
+
 function feed() {
   // Observers and timers live outside Alpine's reactive proxy (native objects break when proxied).
-  let io, more, timer;
+  let io, more, timer, dt, pt; // dt: 8 s no-playback limit, pt: deferred preload
   return {
-    films: [], tab: 'cartelera', q: '', bsec: 'todas', searching: false, queue: [], n: 6, gen: 0,
+    desk: DESK.matches, // desktop stage: same queue, one card shown, next-up rail (index.html)
+    films: [], tab: SECTIONS[location.hash.slice(1)] ? location.hash.slice(1) : 'cartelera', q: '', bsec: 'todas', searching: false, queue: [], n: 6, gen: 0,
     // vid/pre: cards with an iframe (active, hidden preload of the next); ps/pm: player state/muted
-    active: -1, vid: -1, pre: -1, playing: false, ps: -1, pm: false, fs: false, soundOn: ls.get('cineco.sound') === '1',
+    active: -1, vid: -1, pre: -1, np: -1, playing: false, ps: -1, pm: false, fs: false, soundOn: ls.get('cineco.sound') === '1',
     get snd() { return this.soundOn && !this.pm; },
 
     async init() {
       const root = this.$refs.feed;
-      io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && this.setActive(+e.target.dataset.i)), { root, threshold: 0.6 });
+      io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && !this.desk && this.setActive(+e.target.dataset.i)), { root, threshold: 0.6 });
       more = new IntersectionObserver(es => { if (es[0].isIntersecting && this.n < this.queue.length) this.n += 6; }, { root, rootMargin: '0px 0px 150% 0px' });
       more.observe(this.$refs.sentinel);
       // After 'listening' the player reports state, muted, duration, currentTime.
@@ -222,13 +246,11 @@ function feed() {
         if (inf.duration) el.dur = inf.duration;
         if (!el.rdy && (el.rdy = 1) && el.closest('.on')) this.sound(el); // players always autostart; playVideo would bring up YouTube's overlay
         if (st != null) el.st = st;
-        // TikTok: its loading screen stays hidden until state 1 (playing); no state at all: show 2.5 s after onPlayerReady.
-        if (el.tk && d.type === 'onPlayerReady') setTimeout(() => { if (el.closest('.on')) this.playing = true; }, 2500);
         if (!el.closest('.on')) { if (el.tk && st === 1) ytCmd(el, 'pauseVideo'); return; } // hidden TikTok preload: buffer, don't play
-        if (st != null) { this.ps = st; if (st === 1) this.playing = true; }
+        if (st != null) { this.ps = st; if (st === 1) { this.playing = true; this.pre = this.np; } } // playing: start the next preload
         if (st === 0 && !el.tk) { ytCmd(el, 'seekTo', [0, true]); ytCmd(el, 'playVideo'); } // loop
         if (inf.muted != null) this.pm = inf.muted;
-        if (el.dur && inf.currentTime != null) el.closest('.card').style.setProperty('--t', Math.min(inf.currentTime / el.dur, 1));
+        if (el.dur && inf.currentTime != null) [el.closest('.card'), root.querySelector('.up')].forEach(n => n && n.style.setProperty('--t', Math.min(inf.currentTime / el.dur, 1)));
       });
       // Saved sound may be blocked until a gesture: unmute again then.
       ['pointerdown', 'keydown'].forEach(t => addEventListener(t, () => this.sound(), { once: true }));
@@ -238,8 +260,45 @@ function feed() {
       this.promos = Array.isArray(pr) ? pr : [];
       ['tab', '$store.city.slug', '$store.city.list'].forEach(k => this.$watch(k, () => this.build()));
       addEventListener('popstate', () => this.searching && this.browse(false));
+      this.desktop(root);
       this.build();
+      if (location.hash === '#buscar') { history.replaceState(null, '', location.pathname + location.search); this.browse(true); }
     },
+    // Desktop: wheel / ↑↓ / rail clicks step through the queue; crossing 1024px re-renders once.
+    desktop(root) {
+      let wl = 0, lock = 0, acc = 0;
+      const free = () => this.desk && !this.searching && !this.$store.city.open;
+      DESK.addEventListener('change', e => { this.desk = e.matches; this.build(); });
+      addEventListener('hashchange', () => { const h = location.hash.slice(1); if (SECTIONS[h]) this.tab = h; else if (h === 'buscar') this.browse(true); });
+      this.$watch('tab', t => { this.$store.shell.cur = t; });
+      this.$store.shell.cur = this.tab;
+      document.querySelector('.dbar [data-search]').addEventListener('click', e => { e.preventDefault(); this.searching ? this.close() : this.browse(true); });
+      // one step per gesture: trackpad inertia keeps firing, so stay locked until the wheel is quiet for 250 ms (max 1 s)
+      addEventListener('wheel', e => {
+        if (!free() || e.ctrlKey) return;
+        const t = e.timeStamp, quiet = t - wl > 250; wl = t;
+        if (lock && !quiet && t - lock < 1000) return;
+        lock = 0; acc += e.deltaY;
+        if (Math.abs(acc) >= 40) { this.go(this.active + Math.sign(acc)); acc = 0; lock = t; }
+      }, { passive: true });
+      addEventListener('keydown', e => {
+        const d = { ArrowDown: 1, PageDown: 1, ArrowUp: -1, PageUp: -1 }[e.key];
+        if (!d || !free() || e.altKey || e.metaKey || e.ctrlKey || (e.target.closest && e.target.closest('input,textarea,select,[role=tablist]'))) return;
+        e.preventDefault(); this.go(this.active + d);
+      });
+    },
+    go(i) {
+      i = Math.max(0, Math.min(i, this.queue.length - 1));
+      if (i === this.active) return;
+      this.n = Math.max(this.n, i + 8);
+      this.$nextTick(() => this.setActive(i));
+    },
+    get upFrom() { return Math.max(0, Math.min(this.active - 1, this.queue.length - 6)); },
+    upKick(it) {
+      if (it.f) return [filmTag(it.f) || (it.f.alt ? 'Alternativo' : ''), fmtRuntime(it.f.runtime)].filter(Boolean).join(' · ');
+      return it.p ? 'TikTok' : it.type === 'div' ? 'Sección · ' + it.count + (it.count === 1 ? ' película' : ' películas') : '';
+    },
+    upTitle(it) { return (it.f || it.p || it).title || (it.type === 'end' ? 'Fin de la cartelera' : this.emptyText()[0]); },
     obs(el) { io.observe(el); },
 
     build() {
@@ -264,14 +323,16 @@ function feed() {
         out.filter(o => o.f && o.f.feedOrder).forEach(o => { out.splice(out.indexOf(o), 1); out.splice(o.f.feedOrder - 1, 0, o); });
       }
       if (out.some(o => o.f)) out.push({ type: 'end', key: 'end' });
-      io.disconnect(); clearTimeout(timer);
+      io.disconnect(); clearTimeout(timer); clearTimeout(dt); clearTimeout(pt);
       this.gen++; this.active = this.vid = this.pre = -1; this.playing = false; this.n = 6; this.queue = out;
       this.$refs.feed.scrollTop = 0;
+      if (this.desk) this.$nextTick(() => this.go(0));
     },
 
     // TikTok source of a card: the promo itself or a film's vertical trailer; none once it failed to load (films fall back to YouTube).
-    tok(i) { const it = this.queue[i], o = it && (it.p || it.f); return o && !o.tkFail && (it.p || o.verticalTrailer); },
-    key(i) { const t = this.tok(i), it = this.queue[i]; return t ? t.id : it && it.f && it.f.youtubeKey; },
+    // o.dead: nothing played within 8 s (blocked network): no player for that card any more, backdrop/poster stays.
+    tok(i) { const it = this.queue[i], o = it && (it.p || it.f); return o && !o.tkFail && !o.dead && (it.p || o.verticalTrailer); },
+    key(i) { const t = this.tok(i), it = this.queue[i]; return t ? t.id : it && it.f && !it.f.dead && it.f.youtubeKey; },
     src(i, auto = 1) {
       const t = this.tok(i);
       return !t ? ytSrc(this.queue[i].f.youtubeKey, true, auto) : 'https://www.tiktok.com/player/v1/' + t.id + '?autoplay=' + auto +
@@ -281,28 +342,33 @@ function feed() {
     // At most 2 iframes: active card + hidden paused preload of the next film (skipping a divider).
     setActive(i) {
       if (i === this.active) return;
-      clearTimeout(timer); if (this.fs) this.fsOff();
+      clearTimeout(timer); clearTimeout(dt); clearTimeout(pt); if (this.fs) this.fsOff();
       const old = this.vid, key = this.key(i), ready = key && this.pre === i, first = this.active < 0;
       let k = i + 1; if (this.queue[k] && this.queue[k].type === 'div') k++;
       this.active = i; this.playing = false; this.ps = -1;
+      const up = this.$refs.feed.querySelector('.up'); if (up) up.style.setProperty('--t', 0);
       if (NOAUTO) return;
-      this.vid = ready ? i : -1; this.pre = this.key(k) ? k : -1;
+      // The next preload starts once this card plays (message handler) or after 2.5 s, so it never competes with the first paint.
+      this.vid = ready ? i : -1; this.np = this.key(k) ? k : -1; this.pre = this.np === old ? old : -1;
       if (this.pre === old) ytCmd(this.yt(old), 'pauseVideo'); // scrolled back: old player is now the preload
-      // Shown as soon as the player reports `playing` (message handler).
-      // Preloaded YouTube (autoplay=0): switch to the autoplay URL (files cached); no `playing` within 1.5 s: show anyway.
+      pt = setTimeout(() => { this.pre = this.np; }, 2500);
+      // Shown only on a real `playing` report (message handler); nothing within 8 s: drop the player for this card.
+      // Preloaded YouTube (autoplay=0): switch to the autoplay URL (files cached).
       // ponytail: not playVideo on the paused preload: YouTube then overlays its pause/prev/next controls for ~4 s.
       // Preloaded TikTok (autoplay=1, paused once it plays): seek to 0 + play; still playing hidden: show now.
-      // From scratch: create at once for the first card, else after 600 ms (flick-scrolling); YouTube without answer in 1.2 s: show anyway.
-      const el = this.yt(), show = () => { if (this.active === i) this.playing = true; };
-      if (ready && el.tk && el.rdy) { ytCmd(el, 'seekTo', [0]); ytCmd(el, 'playVideo'); this.sound(el); if (el.st === 1) show(); else timer = setTimeout(() => this.playing || show(), 2500); }
-      else if (ready) { el.src = this.src(i); if (!el.tk) timer = setTimeout(() => this.playing || show(), 1500); }
-      else if (key) timer = setTimeout(() => { this.vid = i; timer = setTimeout(() => { const f = this.yt() || {}; f.tk || f.rdy || show(); }, 1200); }, first ? 0 : 600);
+      // From scratch: create at once for the first card, else after 600 ms (flick-scrolling).
+      const el = this.yt(), it = this.queue[i];
+      if (key) dt = setTimeout(() => { if (this.active === i && !this.playing) (it.p || it.f).dead = true; }, 8000);
+      if (ready && !el) this.vid = i; // preload not rendered yet (fast jumps): create the player now
+      else if (ready && el.tk && el.rdy) { ytCmd(el, 'seekTo', [0]); ytCmd(el, 'playVideo'); this.sound(el); if (el.st === 1) this.playing = true; }
+      else if (ready) el.src = this.src(i);
+      else if (key) timer = setTimeout(() => { this.vid = i; }, first ? 0 : 600);
     },
     // One player factory for every card (YouTube or TikTok); a TikTok player without `load` in 6 s is dropped.
     mk(el, i) {
       const it = this.queue[i];
       el.tk = !!this.tok(i); el.classList.toggle('tk', el.tk); el.src = this.src(i, +(el.tk || i !== this.pre)); // TikTok preloads autoplay (muted) to buffer
-      if (el.tk) setTimeout(() => el.ld || ((it.p || it.f).tkFail = true), 6000);
+      if (el.tk) setTimeout(() => el.ld || !el.isConnected || ((it.p || it.f).tkFail = true), 6000); // a player dropped by a rebuild didn't fail
     },
     sound(el = this.yt()) { if (this.soundOn) { ytCmd(el, 'unMute'); ytCmd(el, 'setVolume', [100]); } },
     // 'listening' (YouTube) may be missed right at `load`: repeat it. The first answer marks the player ready.
@@ -332,7 +398,7 @@ function feed() {
     browse(on) {
       this.searching = on; this.$refs.feed.inert = this.$refs.top.inert = document.querySelector('.tabbar').inert = on;
       ytCmd(this.yt(), on ? 'pauseVideo' : 'playVideo');
-      if (on) { history.pushState({ browse: 1 }, ''); this.$nextTick(() => this.$refs.q.focus()); } else this.$refs.sb.focus();
+      if (on) { history.pushState({ browse: 1 }, ''); this.$nextTick(() => this.$refs.q.focus()); } else (this.desk ? document.querySelector('.dbar [data-search]') : this.$refs.sb).focus();
     },
     close() { history.state && history.state.browse ? history.back() : this.browse(false); },
     get results() {
@@ -341,33 +407,6 @@ function feed() {
           (s === 'todas' || (s === 'alternativo' ? f.alt : f.status === s)) && (!qn || norm(f.title + ' ' + (f.titleEs || '')).includes(qn)))
         .sort((a, b) => O.indexOf(a.status) - O.indexOf(b.status) || a.priority - b.priority);
     },
-    top() { this.$refs.feed.scrollTo({ top: 0, behavior: RM ? 'auto' : 'smooth' }); }
-  };
-}
-
-/* ---------- Movie detail ---------- */
-function detail() {
-  return {
-    ...showDays, film: null, missing: false, trailer: false, more: false,
-    async init() {
-      const id = getQueryParam('id');
-      this.film = ((await loadJSON('data/films.json')).films || []).find(f => f.id === id && listed(f)) || null;
-      if (!this.film) { this.missing = true; return; }
-      const f = this.film, set = (sel, v) => { const m = document.querySelector(sel); if (m) m.content = v; };
-      document.title = f.title + ' · Cine Colombia';
-      set('meta[name=description]', f.shortSynopsis || '');
-      set('meta[property="og:title"]', f.title + ' · Cine Colombia');
-      set('meta[property="og:description"]', f.shortSynopsis || '');
-      set('meta[property="og:image"]', f.backdrop || new URL(f.poster, location.href).href);
-      this.$watch('$store.city.slug', c => this.first(c));
-      this.$watch('sel', i => this.day(i));
-      this.first(this.$store.city.slug);
-    },
-    has(i) { return !!(this.week[i] || {})[this.film.id]; },
-    get groups() {
-      const day = (this.week[this.sel] || {})[this.film.id] || {}, c = this.$store.city.cur;
-      return c ? this.$store.geo.sort(c.sites.filter(s => day[s.id])).map(s => ({ s, times: day[s.id] })) : [];
-    },
-    back() { history.length > 1 && document.referrer ? history.back() : (location.href = 'index.html'); }
+    top() { if (this.desk) this.go(0); else this.$refs.feed.scrollTo({ top: 0, behavior: RM ? 'auto' : 'smooth' }); }
   };
 }

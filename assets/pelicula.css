@@ -20,6 +20,7 @@
 .mv>*{position:absolute;inset:0}
 .dcard .rail{inset:auto 10px 12px auto;z-index:2;pointer-events:auto}
 .dcard .title{font-size:32px}
+.dcard .title.long{font-size:26px;line-height:1.1}
 /* signature (from the feed): trailer progress hairline, here along the top edge of the media */
 .dcard::after{content:"";position:absolute;z-index:3;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,rgba(255,255,255,.4),#fff);transform-origin:left;transform:scaleX(var(--t,0));transition:transform .3s linear,opacity .3s;pointer-events:none}
 .dcard:not(.on)::after{opacity:0}
@@ -151,4 +152,53 @@
   .sch,.about{padding:0}
   .dates{margin:0;padding:8px 0}
   .chips{margin:0;padding:2px 0;flex-wrap:wrap}
+}
+/* ---------- Desktop (≥1024px): full-width hero band, then gallery/about (left) + sticky Horarios panel (right) ---------- */
+.d-acts{display:none}
+@media (min-width:1024px){
+  .pel{--mh:520px}
+  .dh{display:none}
+  .pel-main{max-width:none;padding:0}
+  .pel-grid{grid-template-columns:minmax(32px,1fr) minmax(0,640px) 48px minmax(0,528px) minmax(32px,1fr);grid-template-areas:none;grid-template-rows:auto auto 1fr;gap:48px 0;padding:0}
+  /* hero: backdrop/trailer cropped to the band, title block over the bottom fade */
+  .dcard{grid-column:1/-1;grid-row:1}
+  .dcard .media{border-radius:0}
+  .dcard .media::before{top:0;bottom:0;right:45%;height:auto;background:linear-gradient(90deg,rgba(0,0,0,.65),rgba(0,0,0,0))}
+  .dcard .media::after{height:70%;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.55) 45%,#000)}
+  .dcard .info{position:absolute;z-index:2;left:var(--gut);right:calc(var(--gut) + 300px);bottom:40px;margin:0;display:grid;grid-template-columns:168px minmax(0,1fr);align-items:end;gap:10px 32px}
+  .dcard .chiprow{display:contents}
+  .dcard .info>*,.dcard .chiprow>div{grid-column:2}
+  .dcard .chiprow>div{flex-direction:row;align-items:center;gap:10px}
+  .dcard .poster-chip{grid-column:1;grid-row:1/span 7;width:168px;height:252px;box-shadow:0 0 0 1px rgba(255,255,255,.18),0 24px 48px rgba(0,0,0,.6)}
+  .dcard .title{font-size:56px;line-height:1;letter-spacing:-.03em}
+  .dcard .title.long{font-size:42px;line-height:1.05}
+  .dcard .alt{font-size:18px}
+  .dcard .meta{font-size:15px}
+  .d-acts{display:flex;align-items:center;gap:12px;margin-top:10px}
+  .d-acts .btn{width:auto;margin:0;padding:0 24px}
+  .d-acts .pill{gap:8px;min-height:48px;padding:0 18px;border-radius:var(--r-l)}
+  .dcard .rail{inset:auto var(--gut) 44px auto;flex-direction:row;gap:12px}
+  /* vertical (TikTok) trailer: a 9:16 window at the right of the band, backdrop behind */
+  .dcard .media.vert .tk{left:auto;right:var(--gut);top:calc(40px - var(--tt-chrome));translate:none;scale:1;width:248px;height:calc(440px + var(--tt-chrome));clip-path:inset(var(--tt-chrome) 0 0 round var(--r-m))}
+  .dcard .media.vert .rail{right:calc(var(--gut) + 272px)}
+  /* body */
+  .gal{grid-column:2;grid-row:2;padding:0}
+  .about{grid-column:2;grid-row:3;padding:0 0 24px}
+  .sch-h h2,.gal h2,.about h2{font-size:28px}
+  .gal-s{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0;padding:0;overflow:visible}
+  .gal-t{width:auto}
+  .gal-t:nth-of-type(n+7){display:none}
+  .gal-t[data-more]::after{content:attr(data-more);position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.62);font-size:26px;font-weight:700;letter-spacing:-.01em}
+  .gal-t img{transition:transform .3s ease-out,filter .2s ease-out}
+  .gal-t:hover img{transform:scale(1.04);filter:brightness(1.12)}
+  .gal-t:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
+  .syn{font-size:17px}
+  .cr{font-size:16px}
+  .sch{grid-column:4;grid-row:2/span 2;align-self:start;position:sticky;top:calc(var(--bar) + 24px);max-height:calc(100svh - var(--bar) - 48px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent;padding:24px 24px 24px;border-radius:var(--r-l);background:var(--navy-deep);box-shadow:inset 0 0 0 1px var(--line)}
+  .dates{top:-24px;margin:-8px 0 0;padding:8px 0;background:var(--navy-deep)}
+  .sts{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .pel .sch .empty{background:rgba(255,255,255,.04)}
+  .nx{background:rgba(0,0,0,.25)}
+  .mx-n:hover h3{color:var(--fg);text-decoration:underline 2px var(--accent);text-underline-offset:4px}
+  .st[href]:hover{transform:translateY(-2px)}
 }

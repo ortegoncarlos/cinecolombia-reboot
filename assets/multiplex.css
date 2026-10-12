@@ -1,5 +1,6 @@
 /* Multiplex page. Loaded after app.css; overrides only what this page needs. */
 .mxpage{max-width:760px;gap:20px}
+.logo-link{display:flex;align-items:center;min-height:44px}
 
 /* ambient: the day's backdrops as stacked frames, muted and faded into black behind the hero */
 .amb{position:absolute;z-index:-1;inset:0 0 auto;height:min(500px,72svh);display:flex;flex-direction:column;overflow:hidden;pointer-events:none}
@@ -52,7 +53,7 @@
 .fr-b{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}
 .fr .tag{height:20px;font-size:10px;padding:0 6px}
 .fr h3{font-size:18px;line-height:1.2;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
-.fr h3 a{display:inline-block;padding:2px 0}
+.fr h3 a{display:inline-block;padding:11px 0;margin:-9px 0} /* 44px tall hit area, same visual rhythm */
 .fr h3 a:active{color:var(--fg-2)}
 /* == showtime pill == */
 /* One function: time, "desde $" hint, format tags (language outlined, premium in blue tint), optional
@@ -79,7 +80,6 @@
 }
 /* == /showtime pill == */
 .fr .sts{grid-column:1/-1;margin-top:2px}
-.st.next{position:relative;inset:auto;font-size:inherit;color:inherit;letter-spacing:normal;white-space:normal} /* undo app.css feed .next caption */
 .st-k{position:static;margin-bottom:-1px} /* own line: at ~110px wide the corner label hits the time */
 
 /* empty states */
@@ -128,4 +128,42 @@
   .fr h3{font-size:20px}
   .tile{width:100px}
   .strip{margin:-2px 0 0;padding:2px 0 18px;scroll-padding:0}
+}
+/* ---------- Desktop (≥1024px): card grid for the list; hero band + film rows (poster · title · 6 pills per row) ---------- */
+@media (min-width:1024px){
+  .mxpage{max-width:1280px;padding:0 32px;gap:24px}
+  .mxpage>.bar{display:none}
+  .dates,.chips{margin:0;padding:2px 0}
+  .chips{flex-wrap:wrap}
+  /* list */
+  .mxpage .lh{padding-top:48px;font-size:56px;line-height:1;letter-spacing:-.03em}
+  .sl{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:24px;margin-top:8px}
+  .sl li{min-height:216px;display:flex;flex-direction:column;padding:4px 20px 20px;border:0;border-radius:var(--r-l);background:var(--navy-deep);box-shadow:inset 0 0 0 1px var(--line);transition:box-shadow .2s ease-out,transform .2s ease-out}
+  .sl li:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,.26);transform:translateY(-2px)}
+  .sl-main{align-items:flex-start;min-height:92px;padding:16px 0}
+  .sl-main b{font-size:19px}
+  .sl-l{display:none}
+  .strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:auto 0 0;padding:0;overflow:visible}
+  .strip .tile{width:auto}
+  .strip .tile:nth-of-type(n+7),.strip .more{display:none}
+  .tile[data-more]::after{content:attr(data-more);position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,22,38,.74);font-size:15px;font-weight:700}
+  .tile img,.fr img{transition:transform .25s ease-out,filter .2s ease-out}
+  .tile:hover img{transform:scale(1.06);filter:brightness(1.12)}
+  /* detail */
+  .amb{height:560px}
+  .back{margin-top:20px}
+  .mxh{padding:48px 0 16px}
+  .mxh h1{font-size:56px}
+  .mxh p{font-size:17px}
+  #sched{display:grid;grid-template-columns:minmax(0,1fr) 400px;grid-template-rows:auto auto minmax(0,1fr);gap:14px 48px;align-items:start} /* the 1fr row absorbs the box's extra height */
+  #sched>*{grid-column:1/-1}
+  #sched>.sum,#sched>.chips{grid-column:1}
+  #sched>.nx{grid-column:2;grid-row:1/span 3;margin:0}
+  .fr{grid-template-columns:96px minmax(0,280px) minmax(0,1fr);column-gap:24px;align-items:start;padding:28px 0}
+  .fr>a{grid-row:auto}
+  .fr img{width:96px;height:144px}
+  .fr>a:hover img{transform:translateY(-2px);filter:brightness(1.12)}
+  .fr h3{font-size:22px}
+  .fr .sts{grid-column:3;grid-row:1;margin:0;grid-template-columns:repeat(6,minmax(0,1fr))}
+  .st[href]:hover{transform:translateY(-2px)}
 }

@@ -72,11 +72,14 @@ function boleta() {
       const site = id.split('-')[0], cities = await loadJSON('data/cities.json');
       const city = (Array.isArray(cities) ? cities : []).find(c => c.sites.some(s => s.id === site));
       if (city) {
-        const days = await Promise.all(WEEK.map((_, i) => loadDay(city.slug, i)));
-        days.some((d, i) => Object.keys(d).some(f => {
-          const t = (d[f][site] || []).find(x => x.id === id);
-          return t && (this.t = t, this.date = WEEK[i], this.filmId = f);
-        }));
+        // day by day until the show turns up (usually today or tomorrow: 1-2 files instead of 7)
+        for (let i = 0; i < 7 && !this.t; i++) {
+          const d = await loadDay(city.slug, i);
+          Object.keys(d).some(f => {
+            const t = (d[f][site] || []).find(x => x.id === id);
+            return t && (this.t = t, this.date = WEEK[i], this.filmId = f);
+          });
+        }
         this.site = city.sites.find(s => s.id === site);
         if (!this.$store.city.slug) this.$store.city.pick(city.slug); // no IP guess (and its toast) on a deep link
       }
@@ -87,7 +90,7 @@ function boleta() {
       const t = this.t;
       document.title = 'Boletas · ' + this.film.title + ' · Cine Colombia';
       this.fmt = FMTS.find(f => t.attrs.includes(f)) || '2D';
-      const [show, PR] = await Promise.all([loadJSON('data/seats/shows/' + id + '.json'), loadJSON('data/seats/prices.json')]);
+      const [show, PR] = await Promise.all([t.seats ? loadJSON('data/seats/shows/' + id + '.json') : {}, loadJSON('data/seats/prices.json')]); // only flagged shows have a captured file (no 404s)
       const lay = t.layout || show.layout, L = lay ? await loadJSON('data/seats/layouts/' + lay + '.json') : {};
       const sc = String(t.screen || show.screen || (lay || '').split('-')[1] || '');
       this.sala = sc && (/^\d+$/.test(sc) ? 'Sala ' + sc : sc);
@@ -280,7 +283,7 @@ function boleta() {
     },
     take() {
       const free = [...S.values()].filter(s => !s.sold && !this.sel.includes(s.id));
-      if (free.length < 4) return;
+      if (free.length < 4 || this.left && this.left <= 66) return; // quiet during the last-minute warning
       const a = free[Math.floor(Math.random() * free.length)], n = 1 + Math.floor(Math.random() * 3), got = [];
       free.filter(o => o.cy === a.cy && o.cx >= a.cx).sort((p, q) => p.cx - q.cx).some(o => {
         if (got.length && o.cx - got[got.length - 1].cx > CW + 1) return true;
@@ -297,7 +300,7 @@ function boleta() {
 
     hold() {
       this.left = HOLD;
-      tickT = setInterval(() => { if (--this.left <= 0) this.expire(); }, 1000);
+      tickT = setInterval(() => { if (--this.left <= 0) this.expire(); else if (this.left === 60) toast('Queda 1 minuto para terminar tu compra; luego liberamos tus sillas.', null, 6000); }, 1000);
     },
     stopHold() { clearInterval(tickT); tickT = null; this.left = 0; },
     expire() {
