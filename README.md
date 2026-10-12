@@ -41,6 +41,10 @@ The demo can record sessions with [Smartlook](https://www.smartlook.com/) for th
 - Trailers: YouTube (privacy-enhanced `youtube-nocookie.com` embeds).
 - Logo and brand: Cine Colombia. Typeface: Roboto (Google Fonts).
 
+## Pruebas
+
+`npm i && npm test` corre `tests/feed-sound.mjs`: 11 casos del flujo de sonido del feed (preferencia guardada, primer gesto, remute de iOS, TikTok, pestaña oculta, escritorio) con mensajes sintéticos de los reproductores en Chrome (emulación iPhone 13), sin red. Necesita Google Chrome instalado; el sitio en sí sigue sin dependencias.
+
 ## Publicar
 
 El sitio se publica en GitHub Pages con GitHub Actions (`.github/workflows/pages.yml`) en cada push a `main`: https://ortegoncarlos.github.io/cinecolombia-reboot/

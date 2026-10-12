@@ -70,7 +70,9 @@ const TK = { playVideo: 'play', pauseVideo: 'pause', mute: 'mute', unMute: 'unMu
 function ytCmd(el, func, args = []) {
   if (!el || !el.contentWindow || !el.rdy && func !== 'listening') return;
   if (func !== 'listening') dbg('cmd', di(el), func, args.join(','));
-  if (func === 'pauseVideo') el.ut = 0; // our own pause: not an iOS unmute refusal
+  if (window.__cmds) window.__cmds.push([di(el), func, ...args]); // tests/feed-sound.mjs records every command
+  if (func === 'pauseVideo') el.ut = 0, el.op = 1; // our (or the visitor's) pause: not an iOS unmute refusal, not resumed on tab return
+  if (func === 'playVideo') el.op = 0;
   if (el.tk) return TK[func] && el.contentWindow.postMessage({ type: TK[func], value: args[0], 'x-tiktok-player': true }, '*');
   el.contentWindow.postMessage(JSON.stringify(func === 'listening' ? { event: 'listening' } : { event: 'command', func, args }), '*');
 }
@@ -281,22 +283,35 @@ function feed() {
           st = el.tk ? d.type === 'onStateChange' ? d.value : null : d.event === 'onStateChange' ? d.info : inf.playerState;
         if (el.tk && d.type === 'onMute') inf.muted = d.value;
         if (inf.duration) el.dur = inf.duration;
-        if (!el.rdy && (el.rdy = 1) && el.closest('.on')) this.arm(el); // players always autostart; playVideo would bring up YouTube's overlay
+        if (!el.rdy && (el.rdy = 1) && el.closest('.on')) { this.sound(el); this.arm(el); } // sound before playback starts; players always autostart (playVideo would bring up YouTube's overlay)
         const was = el.st; if (st != null) el.st = st;
         if (!el.closest('.on')) { if (el.tk && st === 1) ytCmd(el, 'pauseVideo'); return; } // hidden TikTok preload: buffer, don't play
         if (st != null) { this.ps = st; if (st === 1) { if (this.wait !== 2) this.blocked = false; this.wait = 0; if (!this.playing) { this.playing = true; this.wake(); dbg('playing', this.active, 'preload', this.np); } this.pre = this.np; } } // playing: start the next preload; autoplayed on its own: not blocked
-        if (st === 1 && was !== 1) this.sound(el); // iOS: unmute only once playing (muted autoplay), never before
-        // iOS pauses a muted-autoplaying video unmuted without a gesture: re-mute, resume, wait for a tap on Sonido.
+        if (st === 1 && was !== 1 && !el.rm) this.sound(el); // fallback; unmuting an unmuted player is harmless
+        // iOS pauses a playing muted video unmuted without a gesture at that moment: re-mute and resume THIS card (el.rm: no
+        // more automatic unmutes on it); gest stays, so the next player still starts with sound on ready.
         if (st === 2 && el.ut && Date.now() - el.ut < 1500) {
-          el.ut = 0; this.gest = false; dbg('remute'); ytCmd(el, 'mute'); ytCmd(el, 'playVideo'); this.pm = true;
+          el.ut = 0; el.rm = 1; dbg('remute', di(el)); ytCmd(el, 'mute'); ytCmd(el, 'playVideo'); this.pm = true;
           if (!toldSnd) toldSnd = toast('El sonido se activa con un toque en Sonido', null, 4000) || 1;
         }
         if (st === 0 && !el.tk) { ytCmd(el, 'seekTo', [0, true]); ytCmd(el, 'playVideo'); } // loop
         if (inf.muted != null) this.pm = inf.muted;
         if (el.dur && inf.currentTime != null) [el.closest('.card'), root.querySelector('.up')].forEach(n => n && n.style.setProperty('--t', Math.min(inf.currentTime / el.dur, 1)));
       });
-      // Saved sound may be blocked until a gesture: unmute again then.
-      ['pointerdown', 'keydown'].forEach(t => addEventListener(t, () => { this.gest = true; this.sound(); }, { once: true }));
+      // iOS: no sound before the page's first gesture (scrolling counts); after it, new players may start with sound.
+      // The first gesture also unmutes the playing card, unless it is the Sonido button itself (toggleSound handles it).
+      ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(t => addEventListener(t, e => {
+        if (this.gest) return;
+        this.gest = true; dbg('gest');
+        if (!(e.target.closest && e.target.closest('[aria-label=Sonido]'))) this.sound();
+      }, { capture: true, passive: true }));
+      // Tab back: resume a player the browser paused (not one we or the visitor paused), muted if it was.
+      document.addEventListener('visibilitychange', () => {
+        const el = this.yt();
+        if (document.visibilityState !== 'visible' || !el || el.st !== 2 || el.op || this.searching) return;
+        if (this.pm) ytCmd(el, 'mute');
+        ytCmd(el, 'playVideo');
+      });
       document.addEventListener('fullscreenchange', () => document.fullscreenElement || (this.fs = false));
       this.films = ((await loadJSON('data/films.json')).films || []).filter(listed);
       const pr = await loadJSON('data/promos.json');
@@ -390,7 +405,7 @@ function feed() {
       const old = this.vid, key = this.key(i), ready = key && this.pre === i, first = this.active < 0;
       dbg('active', i, (this.queue[i] && (this.queue[i].f || this.queue[i].p || this.queue[i]).title || '').slice(0, 20), 'key=' + (key || 'none'), 'tk=' + !!this.tok(i), 'ready=' + !!ready, 'pre=' + this.pre);
       let k = i + 1; if (this.queue[k] && this.queue[k].type === 'div') k++;
-      this.active = i; this.playing = false; this.ps = -1; this.wait = 0; this.wake();
+      this.active = i; this.playing = false; this.ps = -1; this.wait = 0; this.pm = !(this.soundOn && this.gest); this.wake();
       const up = this.$refs.feed.querySelector('.up'); if (up) up.style.setProperty('--t', 0);
       if (NOAUTO) return;
       // The next preload starts once this card plays (message handler), or after 8 s (autoplay blocked); at once without a trailer.
@@ -405,7 +420,7 @@ function feed() {
       const el = this.yt(), it = this.queue[i];
       if (key) dt = setTimeout(() => { if (this.active === i && !this.playing && !this.blocked) { (it.p || it.f).dead = true; dbg('dead', i); } }, 20000);
       if (ready && !el) this.vid = i; // preload not rendered yet (fast jumps): create the player now
-      else if (ready && el.tk && el.rdy) { ytCmd(el, 'seekTo', [0]); ytCmd(el, 'playVideo'); if (el.st === 1) { this.sound(el); this.playing = true; this.wake(); } else this.arm(el); }
+      else if (ready && el.tk && el.rdy) { ytCmd(el, 'seekTo', [0]); this.sound(el); ytCmd(el, 'playVideo'); if (el.st === 1) { this.playing = true; this.wake(); } else this.arm(el); }
       else if (ready) el.src = this.src(i);
       else if (key) timer = setTimeout(() => { this.vid = i; }, first ? 0 : 600);
     },
@@ -434,16 +449,17 @@ function feed() {
       }, this.blocked ? 0 : ms);
     },
     tapPlay() {
-      const el = this.yt(); this.wait = 2; this.gest = true; if (el) el.rdy = 1; dbg('tap'); ytCmd(el, 'playVideo'); // a silent TikTok player never marked itself ready
+      const el = this.yt(); this.wait = 2; this.gest = true; if (el) el.rdy = 1; dbg('tap'); this.sound(el); ytCmd(el, 'playVideo'); // a silent TikTok player never marked itself ready
       // ponytail: TikTok ignoring the play message: reload it with its own play button (a tap inside the frame is a valid gesture)
       if (el && el.tk) setTimeout(() => { if (this.wait === 2 && !this.playing && el.isConnected) { el.own = 1; el.src = el.src.replace('autoplay=1', 'autoplay=0').replace('play_button=0', 'play_button=1'); } }, 1500);
     },
-    // Unmute only a playing player after a real gesture (iOS refuses unmuted autoplay); el.ut arms the remute check.
-    sound(el = this.yt()) { if (this.soundOn && this.gest && el && el.st === 1) { dbg('sound', di(el)); el.ut = Date.now(); ytCmd(el, 'unMute'); ytCmd(el, 'setVolume', [100]); } },
+    // Single choke point for unmuting. iOS: no sound before the page's first gesture; after it, a player unmuted before it
+    // starts plays with sound. Called on ready, on preload restart, on playing (fallback), on Sonido. el.ut arms the remute check.
+    sound(el = this.yt()) { if (this.soundOn && this.gest && el && el.rdy) { dbg('sound', di(el)); el.ut = Date.now(); this.pm = false; ytCmd(el, 'unMute'); ytCmd(el, 'setVolume', [100]); } },
     // 'listening' (YouTube) is lost while the player's script is still loading (seconds on a phone): repeat it every
     // 500 ms until the first answer marks the player ready (20 s cap).
     ytLoad(el) {
-      el.rdy = 0; el.ld = 1; dbg('load', di(el)); el.closest('.card').style.setProperty('--t', 0);
+      el.rdy = 0; el.rm = 0; el.ld = 1; dbg('load', di(el)); el.closest('.card').style.setProperty('--t', 0);
       clearInterval(el.li); let n = 0;
       el.li = setInterval(() => { if (el.rdy || !el.isConnected || ++n > 40) clearInterval(el.li); else ytCmd(el, 'listening'); }, 500);
       ytCmd(el, 'listening');
