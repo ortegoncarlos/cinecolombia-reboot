@@ -121,7 +121,8 @@ async function guessCity(list) {
   } catch (e) { /* offline, blocked or slow: fall back */ }
   return 'bogota';
 }
-async function shareFilm(f, url = new URL('pelicula.html?id=' + f.id, location.href).href) {
+const SITE_URL = 'https://ortegoncarlos.github.io/cinecolombia-reboot'; // share links use the static OG pages at /s/{id}/ (generated at deploy)
+async function shareFilm(f, url = SITE_URL + '/s/' + f.id + '/') {
   if (navigator.share) { try { await navigator.share({ title: f.title, text: f.shortSynopsis || f.title, url }); } catch (e) { /* cancelled */ } return; }
   try { await navigator.clipboard.writeText(url); toast('Enlace copiado'); } catch (e) { toast(url); }
 }

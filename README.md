@@ -34,3 +34,9 @@ On the first visit the browser asks get.geojs.io for an approximate location bas
 - Film metadata, posters and backdrops: [TMDB](https://www.themoviedb.org/). This product uses the TMDB API but is not endorsed or certified by TMDB.
 - Trailers: YouTube (privacy-enhanced `youtube-nocookie.com` embeds).
 - Logo and brand: Cine Colombia. Typeface: Roboto (Google Fonts).
+
+## Publicar
+
+El sitio se publica en GitHub Pages con GitHub Actions (`.github/workflows/pages.yml`) en cada push a `main`: https://ortegoncarlos.github.io/cinecolombia-reboot/
+
+En el despliegue se generan páginas estáticas de compartir en `s/{id}/` (`scripts/share-pages.mjs`) con etiquetas Open Graph por película, para que WhatsApp y Facebook muestren título, sinopsis e imagen. El botón Compartir enlaza a esas páginas. Si el sitio cambia de dominio, actualiza `SITE_URL` en `assets/app.js` y la variable `SITE_URL` del workflow (o el valor por defecto del script).
