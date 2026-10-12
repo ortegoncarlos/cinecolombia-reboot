@@ -23,7 +23,7 @@ The demo clock is frozen at 11 October 2026 22:00 (Bogotá) to match the snapsho
 
 Preventa films that open after 17 October have no real showtimes yet, so their release week (release date + 6 days) is simulated from this week's schedule: one file per film and city under `data/showtimes/preventa/`, cloned from each city's busiest cartelera film (same multiplex, times and rooms, so seat maps work), with show ids `pv-{filmId}-{n}`. Opera, theatre and concerts get only a few special screenings.
 
-The Confitería step of the ticket flow reads `data/food.json`, a sample menu (combos, crispetas, bebidas, snacks) with illustrative prices, not Cine Colombia's real menu or prices.
+The Confitería step of the ticket flow reads `data/food.json`: the menu (names, descriptions, prices) and product photos (`media/food/`, resized) come from Cine Colombia's public food page, Confitería tab, with prices as of 12 Oct 2026.
 
 ## Promos
 

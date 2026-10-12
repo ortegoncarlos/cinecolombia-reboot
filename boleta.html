@@ -81,12 +81,13 @@
       <p class="muted">Recoge tu pedido en la confitería mostrando tu boleta</p>
       <template x-for="g in groups" :key="g.name">
         <div class="fg">
-          <h2 class="sec"><i aria-hidden="true" x-text="g.name[0]"></i><span x-text="g.name"></span></h2>
+          <h2 class="sec" x-text="g.name"></h2>
           <ul class="fl">
             <template x-for="i in g.items" :key="i.id">
               <li class="fi">
                 <div class="fi-r">
-                  <span class="tk-c"><b><span x-text="i.name"></span> <span class="attr" x-show="i.tag" x-text="i.tag"></span></b><small x-text="i.desc"></small><span class="fi-p" x-text="cop(i.price)"></span></span>
+                  <img class="fi-img" :src="i.img" alt="" loading="lazy" width="72" height="72">
+                  <span class="tk-c"><b><span x-text="i.name"></span> <span class="attr" x-show="i.tag" x-text="i.tag"></span></b><small x-show="i.desc" x-text="i.desc"></small><span class="fi-p" x-text="cop(i.price)"></span></span>
                   <span class="qty">
                     <button type="button" class="icon-btn" x-show="qty(i)" :aria-label="'Quitar ' + i.name" @click="add(i, -1)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
                     <output x-show="qty(i)" x-text="qty(i)" :aria-label="qty(i) + ' ' + i.name"></output>

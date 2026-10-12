@@ -58,6 +58,7 @@ const ATTR = { Subtitulado: 'Subtitulada', SUB: 'Subtitulada', DOB: 'Doblada', E
 const attrLabel = a => ATTR[a] || a;
 function metaLine(f) { return [fmtRuntime(f.runtime), f.genres.join(', ')].filter(Boolean).join(' · '); }
 function imgSize(url, size) { return url && url.replace(/(image\.tmdb\.org\/t\/p\/)w\d+/, '$1' + size); }
+function heroImg(f) { return f.hero || f.backdrop; } // hand-picked portrait-friendly still, else the TMDB backdrop
 // Background embeds start muted (so autoplay is allowed); sound is toggled via the iframe API (ytCmd).
 // No loop=1&playlist: that turns on YouTube's playlist chrome (prev/pause/next) at start; the feed loops on `ended` instead.
 function ytSrc(key, bg, auto = 1) {

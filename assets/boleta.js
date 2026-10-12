@@ -277,18 +277,18 @@ function boleta() {
       if (!this.sel.length) this.stopHold();
     },
 
-    // Other buyers (simulated): every 8-20 s one to three neighbouring free seats are taken. Never the user's.
+    // Other buyers (simulated): first 1.5 s after the room renders, then every 5-10 s, one to three neighbouring free seats are taken. Never the user's.
     sim(on) {
       clearTimeout(fomoT); clearInterval(viewT); fomoT = viewT = null;
       if (!on) { const t = document.getElementById('toast'); if (t && /tomar la fila/.test(t.textContent)) t.classList.remove('on'); return; }
       viewT = setInterval(() => { this.viewers = Math.min(40, Math.max(3, this.viewers + (Math.random() < 0.5 ? -1 : 1))); }, 7000);
-      this.fomo();
+      this.fomo(true);
     },
-    fomo() {
+    fomo(first) {
       fomoT = setTimeout(() => {
         if (!document.hidden) this.take();
         this.fomo();
-      }, 8000 + Math.random() * 12000);
+      }, first ? 1500 : 5000 + Math.random() * 5000);
     },
     take() {
       const free = [...S.values()].filter(s => !s.sold && !this.sel.includes(s.id));
@@ -301,7 +301,7 @@ function boleta() {
         return got.length >= n;
       });
       if (!got.length) return;
-      got.forEach(o => { o.sold = true; this.paint(o); if (!RM) { o.el.classList.add('taking'); setTimeout(() => o.el.classList.remove('taking'), 1200); } });
+      got.forEach(o => { o.sold = true; this.paint(o); if (!RM) { o.el.classList.add('taking'); setTimeout(() => o.el.classList.remove('taking'), 800); } });
       this.free -= got.length;
       toast('Alguien acaba de tomar la fila ' + a.row + ' ' + and(got.map(o => o.label).sort((p, q) => parseInt(p) - parseInt(q))), null, 3200);
     },

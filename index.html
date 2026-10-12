@@ -48,10 +48,10 @@
         <template x-if="it.type === 'film'"><div style="display:contents">
           <div class="media" :class="fs && i === active && 'is-fs'">
             <!-- vertical (TikTok) media: the poster reads better than a landscape backdrop in the 9:16 box -->
-            <template x-if="it.f.backdrop || tok(i)">
-              <img class="bd" :loading="i ? 'lazy' : 'eager'" :fetchpriority="i ? 'auto' : 'high'" decoding="async" width="1280" height="720" :src="tok(i) ? imgSize(it.f.poster, 'w780') : imgSize(it.f.backdrop, desk ? 'w780' : BD)" alt="">
+            <template x-if="heroImg(it.f) || tok(i)">
+              <img class="bd" :loading="i ? 'lazy' : 'eager'" :fetchpriority="i ? 'auto' : 'high'" decoding="async" width="1280" height="720" :src="tok(i) ? imgSize(it.f.poster, 'w780') : imgSize(heroImg(it.f), desk ? 'w780' : BD)" alt="">
             </template>
-            <template x-if="!it.f.backdrop && !tok(i)">
+            <template x-if="!heroImg(it.f) && !tok(i)">
               <div>
                 <img class="fb-bg" :loading="i ? 'lazy' : 'eager'" decoding="async" :src="imgSize(it.f.poster, 'w185')" alt="">
                 <img class="fb-poster" :loading="i ? 'lazy' : 'eager'" :fetchpriority="i ? 'auto' : 'high'" decoding="async" width="500" height="750" :src="imgSize(it.f.poster, 'w500')" alt="">
@@ -71,8 +71,8 @@
           </div>
           <div class="scrim"></div>
           <div class="info">
-            <div class="chiprow" x-show="it.f.backdrop || filmTag(it.f) || it.f.releaseDate > TODAY">
-              <img class="poster-chip" x-show="it.f.backdrop" loading="lazy" decoding="async" width="56" height="84" :src="imgSize(it.f.poster, 'w185')" alt="">
+            <div class="chiprow" x-show="heroImg(it.f) || filmTag(it.f) || it.f.releaseDate > TODAY">
+              <img class="poster-chip" x-show="heroImg(it.f)" loading="lazy" decoding="async" width="56" height="84" :src="imgSize(it.f.poster, 'w185')" alt="">
               <div>
                 <span class="kicker" x-show="it.f.featured">Destacado</span>
                 <span class="tag" x-show="filmTag(it.f)" x-text="filmTag(it.f)"></span>
