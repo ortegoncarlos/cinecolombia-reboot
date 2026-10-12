@@ -221,7 +221,7 @@ document.body.insertAdjacentHTML('afterbegin', `
 
 function feed() {
   // Observers and timers live outside Alpine's reactive proxy (native objects break when proxied).
-  let io, more, timer, dt, pt; // dt: 8 s no-playback limit, pt: deferred preload
+  let io, more, timer, dt, pt; // dt: 20 s no-playback limit, pt: deferred preload
   return {
     desk: DESK.matches, // desktop stage: same queue, one card shown, next-up rail (index.html)
     films: [], tab: SECTIONS[location.hash.slice(1)] ? location.hash.slice(1) : 'cartelera', q: '', bsec: 'todas', searching: false, queue: [], n: 6, gen: 0,
@@ -330,7 +330,7 @@ function feed() {
     },
 
     // TikTok source of a card: the promo itself or a film's vertical trailer; none once it failed to load (films fall back to YouTube).
-    // o.dead: nothing played within 8 s (blocked network): no player for that card any more, backdrop/poster stays.
+    // o.dead: nothing played within 20 s (blocked/slow network): player dropped until the card is shown again.
     tok(i) { const it = this.queue[i], o = it && (it.p || it.f); return o && !o.tkFail && !o.dead && (it.p || o.verticalTrailer); },
     key(i) { const t = this.tok(i), it = this.queue[i]; return t ? t.id : it && it.f && !it.f.dead && it.f.youtubeKey; },
     src(i, auto = 1) {
@@ -343,38 +343,42 @@ function feed() {
     setActive(i) {
       if (i === this.active) return;
       clearTimeout(timer); clearTimeout(dt); clearTimeout(pt); if (this.fs) this.fsOff();
+      const o = this.queue[i] && (this.queue[i].p || this.queue[i].f); if (o) delete o.dead; // every visit retries
       const old = this.vid, key = this.key(i), ready = key && this.pre === i, first = this.active < 0;
       let k = i + 1; if (this.queue[k] && this.queue[k].type === 'div') k++;
       this.active = i; this.playing = false; this.ps = -1;
       const up = this.$refs.feed.querySelector('.up'); if (up) up.style.setProperty('--t', 0);
       if (NOAUTO) return;
-      // The next preload starts once this card plays (message handler) or after 2.5 s, so it never competes with the first paint.
+      // The next preload starts once this card plays (message handler), or after 8 s (autoplay blocked); at once without a trailer.
       this.vid = ready ? i : -1; this.np = this.key(k) ? k : -1; this.pre = this.np === old ? old : -1;
       if (this.pre === old) ytCmd(this.yt(old), 'pauseVideo'); // scrolled back: old player is now the preload
-      pt = setTimeout(() => { this.pre = this.np; }, 2500);
-      // Shown only on a real `playing` report (message handler); nothing within 8 s: drop the player for this card.
+      pt = setTimeout(() => { this.pre = this.np; }, key ? 8000 : 0);
+      // Shown only on a real `playing` report (message handler); nothing within 20 s: drop the player for this card.
       // Preloaded YouTube (autoplay=0): switch to the autoplay URL (files cached).
       // ponytail: not playVideo on the paused preload: YouTube then overlays its pause/prev/next controls for ~4 s.
       // Preloaded TikTok (autoplay=1, paused once it plays): seek to 0 + play; still playing hidden: show now.
       // From scratch: create at once for the first card, else after 600 ms (flick-scrolling).
       const el = this.yt(), it = this.queue[i];
-      if (key) dt = setTimeout(() => { if (this.active === i && !this.playing) (it.p || it.f).dead = true; }, 8000);
+      if (key) dt = setTimeout(() => { if (this.active === i && !this.playing) (it.p || it.f).dead = true; }, 20000);
       if (ready && !el) this.vid = i; // preload not rendered yet (fast jumps): create the player now
       else if (ready && el.tk && el.rdy) { ytCmd(el, 'seekTo', [0]); ytCmd(el, 'playVideo'); this.sound(el); if (el.st === 1) this.playing = true; }
       else if (ready) el.src = this.src(i);
       else if (key) timer = setTimeout(() => { this.vid = i; }, first ? 0 : 600);
     },
-    // One player factory for every card (YouTube or TikTok); a TikTok player without `load` in 6 s is dropped.
+    // One player factory for every card (YouTube or TikTok); a TikTok player without `load` in 15 s is dropped.
     mk(el, i) {
       const it = this.queue[i];
       el.tk = !!this.tok(i); el.classList.toggle('tk', el.tk); el.src = this.src(i, +(el.tk || i !== this.pre)); // TikTok preloads autoplay (muted) to buffer
-      if (el.tk) setTimeout(() => el.ld || !el.isConnected || ((it.p || it.f).tkFail = true), 6000); // a player dropped by a rebuild didn't fail
+      if (el.tk) setTimeout(() => el.ld || !el.isConnected || ((it.p || it.f).tkFail = true), 15000); // a player dropped by a rebuild didn't fail
     },
     sound(el = this.yt()) { if (this.soundOn) { ytCmd(el, 'unMute'); ytCmd(el, 'setVolume', [100]); } },
-    // 'listening' (YouTube) may be missed right at `load`: repeat it. The first answer marks the player ready.
+    // 'listening' (YouTube) is lost while the player's script is still loading (seconds on a phone): repeat it every
+    // 500 ms until the first answer marks the player ready (20 s cap).
     ytLoad(el) {
       el.rdy = 0; el.ld = 1; el.closest('.card').style.setProperty('--t', 0);
-      [0, 500, 1500].forEach(ms => setTimeout(() => ytCmd(el, 'listening'), ms));
+      clearInterval(el.li); let n = 0;
+      el.li = setInterval(() => { if (el.rdy || !el.isConnected || ++n > 40) clearInterval(el.li); else ytCmd(el, 'listening'); }, 500);
+      ytCmd(el, 'listening');
     },
     toggleSound() {
       this.soundOn = !this.snd; this.pm = !this.soundOn;
