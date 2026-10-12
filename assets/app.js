@@ -69,8 +69,30 @@ const TK = { playVideo: 'play', pauseVideo: 'pause', mute: 'mute', unMute: 'unMu
 // Commands only once the player answered (el.rdy); earlier ones throw in the embed. TikTok players get their own message format.
 function ytCmd(el, func, args = []) {
   if (!el || !el.contentWindow || !el.rdy && func !== 'listening') return;
+  if (func !== 'listening') dbg('cmd', di(el), func, args.join(','));
   if (el.tk) return TK[func] && el.contentWindow.postMessage({ type: TK[func], value: args[0], 'x-tiktok-player': true }, '*');
   el.contentWindow.postMessage(JSON.stringify(func === 'listening' ? { event: 'listening' } : { event: 'command', func, args }), '*');
+}
+// ?debug=1 / #debug: on-screen player log for real-device autoplay debugging; no-op otherwise.
+const DBG = /[?&#]debug/.test(location.href), T0 = performance.now();
+let dbgEl;
+function dbg(...parts) {
+  if (!DBG) return;
+  const line = '+' + ((performance.now() - T0) / 1000).toFixed(2) + ' ' + parts.join(' ');
+  console.log(line);
+  if (!dbgEl) { dbgEl = document.createElement('pre'); dbgEl.id = 'dbg'; document.documentElement.append(dbgEl); }
+  dbgEl.textContent = (dbgEl.textContent + line + '\n').split('\n').slice(-81).join('\n');
+  dbgEl.scrollTop = 1e9;
+}
+const di = el => { const c = el && el.closest('[data-i]'); return c ? c.dataset.i : '?'; };
+if (DBG) {
+  const ua = navigator.userAgent, ua2 = (ua.match(/OS [\d_]+|CriOS\/[\d.]+|Version\/[\d.]+|Chrome\/[\d.]+/g) || [ua.slice(0, 40)]).join(' ');
+  dbg('ua', ua2, 'vis=' + document.visibilityState, 'rm=' + RM, 'noauto=' + !!NOAUTO, 'ua-act=' + !!(navigator.userActivation && navigator.userActivation.isActive), innerWidth + 'x' + innerHeight);
+  const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.setAttribute('playsinline', '');
+  v.src = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+  v.play().then(() => dbg('probe ok'), x => dbg('probe', x.name)).finally(() => { v.pause(); v.removeAttribute('src'); v.load(); });
+  document.addEventListener('visibilitychange', () => dbg('vis', document.visibilityState));
+  ['pagehide', 'pageshow'].forEach(t => addEventListener(t, e => dbg(t, e.persisted ? 'persisted' : '')));
 }
 const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
@@ -253,6 +275,7 @@ function feed() {
         let d = e.data; try { if (typeof d === 'string') d = JSON.parse(d); } catch (x) { return; }
         const el = [...root.querySelectorAll('.yt')].find(f => f.contentWindow === e.source);
         if (!d || !el) return;
+        if (DBG) { const f = d.info || {}, ev = d.event || d.type; if (ev !== 'infoDelivery' && ev !== 'onCurrentTime') dbg('msg', di(el), el.tk ? 'tt' : 'yt', ev, typeof d.info === 'object' ? '' : d.info ?? d.value ?? ''); else if (f.playerState != null || f.muted != null) dbg('msg', di(el), 'yt info state=' + f.playerState, 'muted=' + f.muted); }
         const inf = d.event === 'infoDelivery' && d.info || {},
           st = el.tk ? d.type === 'onStateChange' ? d.value : null : d.event === 'onStateChange' ? d.info : inf.playerState;
         if (el.tk && d.type === 'onMute') inf.muted = d.value;
@@ -260,7 +283,7 @@ function feed() {
         if (!el.rdy && (el.rdy = 1) && el.closest('.on')) { this.sound(el); this.arm(el); } // players always autostart; playVideo would bring up YouTube's overlay
         if (st != null) el.st = st;
         if (!el.closest('.on')) { if (el.tk && st === 1) ytCmd(el, 'pauseVideo'); return; } // hidden TikTok preload: buffer, don't play
-        if (st != null) { this.ps = st; if (st === 1) { if (this.wait !== 2) this.blocked = false; this.wait = 0; if (!this.playing) { this.playing = true; this.wake(); } this.pre = this.np; } } // playing: start the next preload; autoplayed on its own: not blocked
+        if (st != null) { this.ps = st; if (st === 1) { if (this.wait !== 2) this.blocked = false; this.wait = 0; if (!this.playing) { this.playing = true; this.wake(); dbg('playing', this.active, 'preload', this.np); } this.pre = this.np; } } // playing: start the next preload; autoplayed on its own: not blocked
         if (st === 0 && !el.tk) { ytCmd(el, 'seekTo', [0, true]); ytCmd(el, 'playVideo'); } // loop
         if (inf.muted != null) this.pm = inf.muted;
         if (el.dur && inf.currentTime != null) [el.closest('.card'), root.querySelector('.up')].forEach(n => n && n.style.setProperty('--t', Math.min(inf.currentTime / el.dur, 1)));
@@ -358,6 +381,7 @@ function feed() {
       clearTimeout(timer); clearTimeout(dt); clearTimeout(pt); clearTimeout(bt); if (this.fs) this.fsOff();
       const o = this.queue[i] && (this.queue[i].p || this.queue[i].f); if (o) delete o.dead; // every visit retries
       const old = this.vid, key = this.key(i), ready = key && this.pre === i, first = this.active < 0;
+      dbg('active', i, (this.queue[i] && (this.queue[i].f || this.queue[i].p || this.queue[i]).title || '').slice(0, 20), 'key=' + (key || 'none'), 'tk=' + !!this.tok(i), 'ready=' + !!ready, 'pre=' + this.pre);
       let k = i + 1; if (this.queue[k] && this.queue[k].type === 'div') k++;
       this.active = i; this.playing = false; this.ps = -1; this.wait = 0; this.wake();
       const up = this.$refs.feed.querySelector('.up'); if (up) up.style.setProperty('--t', 0);
@@ -365,14 +389,14 @@ function feed() {
       // The next preload starts once this card plays (message handler), or after 8 s (autoplay blocked); at once without a trailer.
       this.vid = ready ? i : -1; this.np = this.key(k) ? k : -1; this.pre = this.np === old ? old : -1;
       if (this.pre === old) ytCmd(this.yt(old), 'pauseVideo'); // scrolled back: old player is now the preload
-      pt = setTimeout(() => { this.pre = this.np; }, key ? 8000 : 0);
+      pt = setTimeout(() => { this.pre = this.np; dbg('preload', this.np); }, key ? 8000 : 0);
       // Shown only on a real `playing` report (message handler); nothing within 20 s: drop the player for this card.
       // Preloaded YouTube (autoplay=0): switch to the autoplay URL (files cached).
       // ponytail: not playVideo on the paused preload: YouTube then overlays its pause/prev/next controls for ~4 s.
       // Preloaded TikTok (autoplay=1, paused once it plays): seek to 0 + play; still playing hidden: show now.
       // From scratch: create at once for the first card, else after 600 ms (flick-scrolling).
       const el = this.yt(), it = this.queue[i];
-      if (key) dt = setTimeout(() => { if (this.active === i && !this.playing && !this.blocked) (it.p || it.f).dead = true; }, 20000);
+      if (key) dt = setTimeout(() => { if (this.active === i && !this.playing && !this.blocked) { (it.p || it.f).dead = true; dbg('dead', i); } }, 20000);
       if (ready && !el) this.vid = i; // preload not rendered yet (fast jumps): create the player now
       else if (ready && el.tk && el.rdy) { ytCmd(el, 'seekTo', [0]); ytCmd(el, 'playVideo'); this.sound(el); if (el.st === 1) { this.playing = true; this.wake(); } else this.arm(el); }
       else if (ready) el.src = this.src(i);
@@ -382,12 +406,13 @@ function feed() {
     mk(el, i) {
       const it = this.queue[i];
       el.tk = !!this.tok(i); el.classList.toggle('tk', el.tk); el.src = this.src(i, +(el.tk || i !== this.pre)); // TikTok preloads autoplay (muted) to buffer
+      dbg('mk', i, 'tk=' + el.tk, 'autoplay=' + +(el.tk || i !== this.pre));
       if (el.tk) setTimeout(() => el.ld || !el.isConnected || ((it.p || it.f).tkFail = true), 15000); // a player dropped by a rebuild didn't fail
     },
     // Clear mode: 3 s after playback the UI over the video dims (CSS, mobile); any touch/focus/scroll restores and restarts.
     wake() {
       this.dim = false; clearTimeout(dk);
-      const tick = () => { if (this.searching || this.$store.city.open) dk = setTimeout(tick, 3000); else this.dim = true; };
+      const tick = () => { if (this.searching || this.$store.city.open) dk = setTimeout(tick, 3000); else { this.dim = true; dbg('dim'); } };
       if (this.playing) dk = setTimeout(tick, 3000);
     },
     // Autoplay refused (iOS Low Power Mode, browser setting): ready player that never plays/buffers within 2.5 s
@@ -397,13 +422,13 @@ function feed() {
       clearTimeout(bt);
       bt = setTimeout(() => {
         if (el !== this.yt() || this.playing || el.st === 1 || el.st === 3) return;
-        this.blocked = true; this.wait = 1;
+        this.blocked = true; this.wait = 1; dbg('arm -> blocked (st=' + el.st + ')');
         if (!told) told = toast(/iPhone|iPad/.test(navigator.userAgent) || /Mac/.test(navigator.userAgent) && navigator.maxTouchPoints > 1
           ? 'Modo de bajo consumo: toca ▶ para ver el tráiler' : 'Tu navegador pausa los videos automáticos: toca ▶ para verlos', null, 5000) || 1;
       }, this.blocked ? 0 : ms);
     },
     tapPlay() {
-      const el = this.yt(); this.wait = 2; if (el) el.rdy = 1; ytCmd(el, 'playVideo'); // a silent TikTok player never marked itself ready
+      const el = this.yt(); this.wait = 2; if (el) el.rdy = 1; dbg('tap'); ytCmd(el, 'playVideo'); // a silent TikTok player never marked itself ready
       // ponytail: TikTok ignoring the play message: reload it with its own play button (a tap inside the frame is a valid gesture)
       if (el && el.tk) setTimeout(() => { if (this.wait === 2 && !this.playing && el.isConnected) { el.own = 1; el.src = el.src.replace('autoplay=1', 'autoplay=0').replace('play_button=0', 'play_button=1'); } }, 1500);
     },
@@ -411,7 +436,7 @@ function feed() {
     // 'listening' (YouTube) is lost while the player's script is still loading (seconds on a phone): repeat it every
     // 500 ms until the first answer marks the player ready (20 s cap).
     ytLoad(el) {
-      el.rdy = 0; el.ld = 1; el.closest('.card').style.setProperty('--t', 0);
+      el.rdy = 0; el.ld = 1; dbg('load', di(el)); el.closest('.card').style.setProperty('--t', 0);
       clearInterval(el.li); let n = 0;
       el.li = setInterval(() => { if (el.rdy || !el.isConnected || ++n > 40) clearInterval(el.li); else ytCmd(el, 'listening'); }, 500);
       ytCmd(el, 'listening');

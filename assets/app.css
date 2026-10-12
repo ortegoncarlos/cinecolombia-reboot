@@ -325,3 +325,4 @@ body:has(.is-fs) :is(.top,.tabbar){display:none}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
+#dbg{position:fixed;left:0;bottom:calc(var(--tabbar) + env(safe-area-inset-bottom));z-index:99;max-width:100vw;max-height:45vh;overflow:auto;margin:0;padding:4px 6px;font:10px/1.3 monospace;white-space:pre-wrap;background:rgba(0,0,0,.8);color:#9f9;pointer-events:none}
