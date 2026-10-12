@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cine Colombia · Cartelera</title>
+<meta name="description" content="Cartelera, preventa y próximos estrenos de Cine Colombia. Ver horarios y comprar boletas.">
+<meta name="theme-color" content="#000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%230070bd'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='18' fill='%23fff' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://image.tmdb.org">
+<link rel="preconnect" href="https://www.youtube-nocookie.com">
+<link rel="preload" href="data/films.json" as="fetch" crossorigin>
+<link rel="preload" href="data/cities.json" as="fetch" crossorigin>
+<link rel="stylesheet" href="assets/app.css">
+<script src="assets/app.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.9/cdn.min.js" defer></script>
+</head>
+<body>
+<div x-data="feed()">
+  <header class="top" x-ref="top">
+    <div class="bar">
+      <img class="logo" src="assets/logo-blanco.png" alt="Cine Colombia" width="108" height="28">
+      <button class="pill" @click="$store.city.open = true" :aria-label="'Elige tu ciudad' + ($store.city.cur ? ', actual ' + $store.city.cur.name : '')">
+        <span x-text="$store.city.cur ? $store.city.cur.name : 'Elige tu ciudad'">Elige tu ciudad</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <button class="icon-btn" x-ref="sb" aria-label="Buscar" @click="browse(true)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      </button>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Secciones">
+      <template x-for="t in Object.keys(SECTIONS)" :key="t">
+        <button role="tab" :aria-selected="tab === t" @click="tab === t ? build() : tab = t; $el.scrollIntoView({ inline: 'nearest' })" x-text="SECTIONS[t][0]"></button>
+      </template>
+    </nav>
+  </header>
+
+  <main class="feed" x-ref="feed" aria-label="Películas">
+    <template x-for="(it, i) in queue.slice(0, n)" :key="gen + it.key">
+      <article class="card" :class="{ on: i === active, play: i === active && playing, plain: !it.f && !it.p, vert: !!tok(i) }" :data-i="i" x-init="obs($el)">
+
+        <template x-if="it.type === 'film'"><div style="display:contents">
+          <div class="media" :class="fs && i === active && 'is-fs'">
+            <template x-if="it.f.backdrop">
+              <img class="bd" :loading="i ? 'lazy' : 'eager'" :fetchpriority="i ? 'auto' : 'high'" decoding="async" width="1280" height="720" :src="imgSize(it.f.backdrop, BD)" :alt="it.f.title">
+            </template>
+            <template x-if="!it.f.backdrop">
+              <div>
+                <img class="fb-bg" :loading="i ? 'lazy' : 'eager'" decoding="async" :src="imgSize(it.f.poster, 'w185')" alt="">
+                <img class="fb-poster" :loading="i ? 'lazy' : 'eager'" :fetchpriority="i ? 'auto' : 'high'" decoding="async" width="500" height="750" :src="imgSize(it.f.poster, 'w500')" :alt="it.f.title">
+              </div>
+            </template>
+            <template x-for="k in (i === vid || i === pre) && key(i) ? [key(i)] : []" :key="k">
+              <iframe class="yt" x-init="mk($el, i)" @load="ytLoad($el)" title="Trailer" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true"></iframe>
+            </template>
+            <template x-if="fs && i === active">
+              <div class="fsc" @keydown.escape.window="fsOff()">
+                <button class="disc x" @click="fsOff()" aria-label="Cerrar pantalla completa"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+                <button class="disc" @click="ytCmd(yt(), ps === 1 ? 'pauseVideo' : 'playVideo')" :aria-label="ps === 1 ? 'Pausar' : 'Reproducir'"><svg viewBox="0 0 24 24" style="fill:#fff;stroke:none"><path x-show="ps !== 1" d="M7 4.5v15L19.5 12z"/><path x-show="ps === 1" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg></button>
+                <button class="disc" @click="toggleSound()" :aria-pressed="snd" :aria-label="snd ? 'Silenciar' : 'Activar sonido'"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path x-show="!snd" d="M17 9l4 6M21 9l-4 6"/><path x-show="snd" d="M17 8a5 5 0 0 1 0 8"/></svg></button>
+              </div>
+            </template>
+          </div>
+          <div class="scrim"></div>
+          <div class="info">
+            <div class="chiprow" x-show="it.f.backdrop || filmTag(it.f) || it.f.releaseDate > TODAY">
+              <img class="poster-chip" x-show="it.f.backdrop" loading="lazy" decoding="async" width="56" height="84" :src="imgSize(it.f.poster, 'w185')" alt="">
+              <div>
+                <span class="kicker" x-show="it.f.featured">Destacado</span>
+                <span class="tag" x-show="filmTag(it.f)" x-text="filmTag(it.f)"></span>
+                <span class="kicker" x-show="it.f.releaseDate > TODAY" x-text="'Estreno ' + fmtRelease(it.f.releaseDate, true)"></span>
+              </div>
+            </div>
+            <span class="kicker" x-show="it.f.alt" x-text="altLabel(it.f)"></span>
+            <h2 class="title" x-text="it.f.title"></h2>
+            <p class="alt" x-show="it.f.titleEs" x-text="it.f.titleEs"></p>
+            <div class="meta"><span class="rate" x-show="rateLabel(it.f.rating)" x-text="rateLabel(it.f.rating)"></span><span x-text="metaLine(it.f)"></span></div>
+            <div class="attrs"><template x-for="a in it.f.attributes.slice(0, 4)" :key="a"><span class="attr" x-text="a"></span></template></div>
+            <a class="btn" :href="'pelicula.html?id=' + it.f.id">
+              <span x-text="it.f.status === 'pronto' ? 'Ver detalles' : 'Ver horarios'"></span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+          </div>
+          <div class="rail">
+            <button x-show="i === active && playing" @click="toggleSound()" :aria-pressed="snd" :aria-label="snd ? 'Silenciar' : 'Activar sonido'">
+              <span class="disc"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path x-show="!snd" d="M17 9l4 6M21 9l-4 6"/><path x-show="snd" d="M17 8a5 5 0 0 1 0 8"/></svg></span>Sonido</button>
+            <button x-show="i === active && key(i)" @click="fsOn()" aria-label="Pantalla completa">
+              <span class="disc"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></span>Pantalla</button>
+            <button @click="shareFilm(it.f)" aria-label="Compartir">
+              <span class="disc"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></span>Compartir</button>
+          </div>
+        </div></template>
+
+        <template x-if="it.p"><div style="display:contents">
+          <div class="media">
+            <svg class="tk-mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M16.6 5.8A4.3 4.3 0 0 1 15.5 3h-3.1v12.4a2.6 2.6 0 1 1-1.8-2.5V9.7a5.7 5.7 0 1 0 4.9 5.7V9a7.3 7.3 0 0 0 4.3 1.4V7.3a4.3 4.3 0 0 1-3.2-1.5z"/></svg>
+            <template x-for="k in (i === vid || i === pre) && key(i) ? [key(i)] : []" :key="k">
+              <iframe class="yt" x-init="mk($el, i)" @load="ytLoad($el)" title="Trailer" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true"></iframe>
+            </template>
+          </div>
+          <div class="scrim"></div>
+          <div class="info">
+            <span class="kicker" x-text="'TikTok · ' + it.p.author"></span>
+            <h2 class="title" x-text="it.p.title"></h2>
+            <a class="btn sec2" :href="it.p.url" target="_blank" rel="noopener">Ver en TikTok</a>
+          </div>
+          <div class="rail">
+            <button x-show="i === active && playing && !it.p.tkFail" @click="toggleSound()" :aria-pressed="snd" :aria-label="snd ? 'Silenciar' : 'Activar sonido'">
+              <span class="disc"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path x-show="!snd" d="M17 9l4 6M21 9l-4 6"/><path x-show="snd" d="M17 8a5 5 0 0 1 0 8"/></svg></span>Sonido</button>
+            <button @click="shareFilm(it.p, it.p.url)" aria-label="Compartir">
+              <span class="disc"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></span>Compartir</button>
+          </div>
+        </div></template>
+
+        <template x-if="it.type === 'div'">
+          <div style="display:contents">
+            <span class="sec">A continuación</span>
+            <h2 x-text="it.title"></h2>
+            <p x-text="it.text"></p>
+            <span class="count" x-text="it.count + (it.count === 1 ? ' película' : ' películas')"></span>
+          </div>
+        </template>
+        <template x-if="it.type === 'empty'">
+          <div style="display:contents">
+            <h2 x-text="emptyText()[0]"></h2>
+            <p x-text="emptyText()[1]"></p>
+            <button class="btn" @click="$store.city.open = true">Cambiar ciudad</button>
+          </div>
+        </template>
+        <template x-if="it.type === 'end'">
+          <div style="display:contents">
+            <h2>Eso es todo por hoy</h2>
+            <p>Ya viste toda la cartelera. Vuelve pronto: cada jueves hay estrenos.</p>
+            <button class="btn" @click="top()">Volver arriba</button>
+          </div>
+        </template>
+
+        <p class="next" x-show="it.type !== 'end' && next(i)" aria-hidden="true">Siguiente · <b x-text="next(i)"></b></p>
+      </article>
+    </template>
+    <!-- ponytail: finite catalog, the "infinite" feed ends on an end card instead of looping -->
+    <div class="sentinel" x-ref="sentinel"></div>
+  </main>
+  <div class="browse" x-show="searching" x-cloak role="dialog" aria-modal="true" aria-label="Buscar películas" @keydown.escape="close()">
+    <div class="bar">
+      <input class="search" type="search" x-ref="q" x-model.debounce.150ms="q" placeholder="Buscar película" aria-label="Buscar película">
+      <button class="icon-btn" @click="close()" aria-label="Cerrar búsqueda"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="chips" role="tablist" aria-label="Sección">
+      <template x-for="s in ['todas', ...Object.keys(SECTIONS)]" :key="s">
+        <button role="tab" :aria-selected="bsec === s" @click="bsec = s" x-text="s === 'todas' ? 'Todas' : SECTIONS[s][0]"></button>
+      </template>
+    </div>
+    <div class="grid">
+      <template x-for="f in results" :key="f.id">
+        <a class="tile" :href="'pelicula.html?id=' + f.id"><img loading="lazy" decoding="async" width="110" height="165" :src="imgSize(f.poster, 'w185')" alt=""><span class="tag" x-show="filmTag(f)" x-text="filmTag(f)"></span><span x-text="f.title"></span></a>
+      </template>
+    </div>
+    <p class="empty" x-show="!results.length">Sin resultados</p>
+  </div>
+</div>
+
+<nav class="tabbar" aria-label="Principal">
+  <a href="index.html" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 4v5M16 4v5"/></svg>Cartelera</a>
+  <a href="multiplex.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Multiplex</a>
+</nav>
+</body>
+</html>

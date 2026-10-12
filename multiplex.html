@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Multiplex · Cine Colombia</title>
+<meta name="description" content="Multiplex de Cine Colombia en tu ciudad: dirección, cómo llegar y funciones.">
+<meta name="theme-color" content="#000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%230070bd'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='18' fill='%23fff' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://image.tmdb.org">
+<link rel="preload" href="data/cities.json" as="fetch" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/multiplex.css">
+<script src="assets/app.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.9/cdn.min.js" defer></script>
+</head>
+<body>
+<main class="mxpage page" x-data="mxp()">
+  <div class="amb" aria-hidden="true" x-show="bg.length"><template x-for="b in bg" :key="b"><img :src="imgSize(b, 'w780')" alt=""></template></div>
+  <div class="bar">
+    <a href="index.html" class="logo-link"><img class="logo" src="assets/logo-blanco.png" alt="Cine Colombia" width="108" height="28"></a>
+    <button class="pill" x-show="!id" @click="$store.city.open = true" :aria-label="'Elige tu ciudad' + ($store.city.cur ? ', actual ' + $store.city.cur.name : '')">
+      <span x-text="$store.city.cur ? $store.city.cur.name : 'Elige tu ciudad'">Elige tu ciudad</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+  </div>
+
+  <template x-if="!id">
+    <div style="display:contents">
+      <h1 class="lh" x-text="'Multiplex en ' + ($store.city.cur ? $store.city.cur.name : 'tu ciudad')">Multiplex</h1>
+      <button class="pill ghost" style="align-self:flex-start" x-show="$store.city.cur && $store.city.cur.sites.length > 1 && !$store.geo.pos" @click="$store.geo.ask()" x-text="$store.geo.busy ? 'Buscando…' : 'Ordenar por cercanía'"></button>
+      <ul class="sl">
+        <template x-for="s in sites" :key="s.id">
+          <li>
+            <a class="sl-main" :href="'multiplex.html?id=' + s.id">
+              <span><b x-text="s.name"></b><small x-text="addr(s).street"></small><small class="sl-n" x-show="lday >= 0" x-text="lsub(s)"></small></span>
+              <span class="sl-go"><small x-show="$store.geo.km(s)" x-text="$store.geo.km(s)"></small><span class="sl-l">Ver funciones</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
+            </a>
+            <div class="strip" x-show="(lmap[s.id] || []).length">
+              <template x-for="f in (lmap[s.id] || []).slice(0, 12)" :key="f.id">
+                <a class="tile" :href="'multiplex.html?id=' + s.id + '&film=' + f.id" :aria-label="'Funciones de ' + f.title + (f.tag ? ', ' + f.tag.toLowerCase() : '')"><img loading="lazy" decoding="async" width="84" height="126" :src="f.p" alt=""><i x-show="f.tag"></i></a>
+              </template>
+              <a class="tile more" x-show="(lmap[s.id] || []).length > 12" :href="'multiplex.html?id=' + s.id" x-text="'+' + ((lmap[s.id] || []).length - 12) + ' más'"></a>
+            </div>
+          </li>
+        </template>
+      </ul>
+    </div>
+  </template>
+
+  <template x-if="id">
+    <div style="display:contents">
+      <a class="back" href="multiplex.html"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>Todos los multiplex</a>
+      <p class="empty" x-show="missing"><b>No encontramos este multiplex</b><br>Puede que el enlace esté incompleto. <a class="link" href="multiplex.html">Ver todos los multiplex</a></p>
+      <template x-if="site">
+        <div style="display:contents">
+          <header class="mxh">
+            <h1><span>Multiplex</span><span x-text="site.name"></span></h1>
+            <p><b x-text="addr(site).place"></b><span x-text="addr(site).street"></span></p>
+            <div class="mxh-acts">
+              <a class="go" :href="mapsUrl(site)" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Cómo llegar</a>
+              <span class="dist" x-show="$store.geo.km(site)" x-text="'A ' + $store.geo.km(site) + ' de ti'"></span>
+            </div>
+          </header>
+
+          <div class="empty" x-show="closed"><b>Sin funciones esta semana</b><br>Este multiplex no tiene horarios publicados del <span x-text="fmtRelease(WEEK[0], 1)"></span> al <span x-text="fmtRelease(WEEK[6], 1)"></span>.<div class="empty-acts"><a class="btn" href="multiplex.html" @click="$store.city.pick(city.slug)">Ver otros multiplex</a><a class="link" href="index.html">Ver cartelera</a></div></div>
+
+          <section class="sched" x-show="ready && !closed" aria-labelledby="h-hor">
+            <h2 class="sec" id="h-hor">Horarios</h2>
+            <div class="dates" role="tablist" aria-label="Día">
+              <template x-for="(d, i) in WEEK" :key="d">
+                <button class="date" role="tab" :id="'d' + i" aria-controls="sched" :class="{ none: D[i] && !D[i].length, unk: !D[i] }" :aria-selected="sel === i" :tabindex="sel === i ? 0 : -1" @click="pick(i)"
+                  @keydown.arrow-right.prevent="$el.nextElementSibling && $el.nextElementSibling.focus()" @keydown.arrow-left.prevent="$el.previousElementSibling && $el.previousElementSibling.focus && $el.previousElementSibling.focus()"
+                  :aria-label="fmtDate(d).label + ' ' + fmtDate(d).day + (D[i] && !D[i].length ? ', sin funciones' : '')"><small x-text="fmtDate(d).label"></small><b x-text="fmtDate(d).day"></b></button>
+              </template>
+            </div>
+            <div id="sched" role="tabpanel" :aria-labelledby="'d' + sel" class="sched">
+              <p class="sum" x-show="summary" x-text="summary"></p>
+              <div class="chips" x-show="attrs.length || isToday || film" role="group" aria-label="Filtrar funciones">
+                <button class="chip" x-show="film" aria-pressed="true" @click="clearFilm()" :aria-label="'Quitar filtro: ' + filmTitle"><span x-text="filmTitle"></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+                <button class="chip" x-show="isToday" :aria-pressed="now + ''" @click="now = !now"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Ahora</button>
+                <template x-for="a in attrs" :key="a"><button class="chip" :aria-pressed="f.includes(a) + ''" @click="f = f.includes(a) ? f.filter(x => x !== a) : [...f, a]" x-text="a"></button></template>
+              </div>
+
+              <section class="nx" x-show="next.length" aria-labelledby="h-nx">
+                <h3 id="h-nx" x-text="'Próximas funciones · ' + (isToday ? 'hoy' : fmtDate(WEEK[sel]).label.toLowerCase() + ' ' + fmtDate(WEEK[sel]).day)"></h3>
+                <template x-for="n in next" :key="n.s.id">
+                  <a class="nx-r" :href="'boleta.html?show=' + n.s.id"><b x-text="n.s.time"></b><span><span x-text="n.f.title"></span><small x-text="n.s.attrs.join(' ')"></small></span><em x-text="isToday ? rel(n.s.time) : ''"></em></a>
+                </template>
+              </section>
+
+              <template x-for="g in list" :key="g.f.id">
+                <article class="fr">
+                  <a :href="'pelicula.html?id=' + g.f.id" tabindex="-1" aria-hidden="true"><img :src="imgSize(g.f.poster, 'w185')" @error.once="$el.src = g.f.poster" width="72" height="108" alt="" decoding="async"></a>
+                  <div class="fr-b">
+                    <span class="tag" x-show="filmTag(g.f)" x-text="filmTag(g.f)"></span>
+                    <h3><a :href="'pelicula.html?id=' + g.f.id" x-text="g.f.title"></a></h3>
+                    <div class="meta"><span class="rate" x-show="rateLabel(g.f.rating)" x-text="rateLabel(g.f.rating)"></span><span x-text="[fmtRuntime(g.f.runtime), g.f.genres.slice(0, 2).join(', ')].filter(Boolean).join(' · ')"></span></div>
+                  </div>
+                  <div class="sts">
+                    <template x-for="s in g.times" :key="s.id">
+                      <a class="st" :class="{ past: past(s), next: next[0] && next[0].s === s }" :href="s.soldOut || past(s) ? null : 'boleta.html?show=' + s.id" :aria-disabled="(s.soldOut || past(s)) + ''"
+                        :aria-label="s.time + ', ' + (s.soldOut ? 'agotada' : past(s) ? 'ya comenzó' : tags(s) + ', ' + price(s) + (low(s) ? ', pocas sillas' : '') + ', comprar')">
+                        <span class="st-k" x-show="next[0] && next[0].s === s">Próxima</span>
+                        <b x-text="s.time"></b>
+                        <small class="st-p" x-text="s.soldOut ? 'Agotada' : price(s)"></small>
+                        <span class="st-t"><template x-for="a in s.attrs.filter(a => a !== '2D')" :key="a"><i :class="{ x: !LANG.includes(a) }" x-text="a === 'Imax' ? 'IMAX' : a"></i></template></span>
+                        <em class="st-l" x-show="low(s)">Pocas sillas</em>
+                      </a>
+                    </template>
+                  </div>
+                </article>
+              </template>
+
+              <button class="link all" x-show="film && list.length" @click="clearFilm()">Mostrar todas las películas</button>
+              <div class="empty" x-show="D[sel] && !D[sel].length && (alt >= 0 || film)"><b x-text="film ? filmTitle + ' no tiene funciones aquí este día' : 'No hay funciones este día'"></b><br><span x-text="film && alt < 0 ? 'Tampoco en el resto de la semana.' : 'Los horarios de este día aún no están publicados.'"></span><div class="empty-acts"><button class="btn" x-show="alt >= 0" @click="pick(alt)" x-text="alt >= 0 ? 'Ver ' + fmtDate(WEEK[alt]).label.toLowerCase() + ' ' + fmtDate(WEEK[alt]).day : ''"></button><button class="link" x-show="film" @click="clearFilm()">Mostrar todas las películas</button></div></div>
+              <div class="empty" x-show="D[sel] && D[sel].length && !list.length"><b>Ninguna función con estos filtros</b><div class="empty-acts"><button class="btn" @click="f = []; now = false">Quitar filtros</button></div></div>
+            </div>
+          </section>
+        </div>
+      </template>
+    </div>
+  </template>
+</main>
+
+<nav class="tabbar" aria-label="Principal">
+  <a href="index.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 4v5M16 4v5"/></svg>Cartelera</a>
+  <a href="multiplex.html" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Multiplex</a>
+</nav>
+<script>
+// Page component (app.js keeps the older mx(); this page owns its own logic).
+function mxp() {
+  const hm = () => new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(typeof appNow === 'function' ? appNow() : new Date()); // app clock (frozen in demos)
+  const ORDER = ['2D', '3D', 'SUB', 'DOB', 'ESP', 'Dinamix', 'Megasala', 'Imax', 'IFV', 'Onyx'], LANG = ['SUB', 'DOB', 'ESP'], BASE = { '2D': 12000, '3D': 18000, Dinamix: 18000, Megasala: 24000, Imax: 24000, Onyx: 32000 };
+  const rank = a => (ORDER.indexOf(a) + 1) || 99;
+  const tidy = s => s.toLowerCase().replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase()).replace(/ (Del|De|La|Las|Los|Y) /g, w => w.toLowerCase()).replace(/^Cc /, 'CC ');
+  const byTime = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+  let films = {}, city = null; // outside the reactive proxy
+  return {
+    id: getQueryParam('id'), film: getQueryParam('film'), site: null, city: null, days: WEEK.map(() => null), sel: 0, ready: false, missing: false,
+    f: [], now: false, t: hm(), bg: [], LANG, PR: null, lmap: {}, lday: -1, lweek: null,
+    async init() {
+      loadJSON('data/seats/prices.json').then(p => { this.PR = p; });
+      if (!this.id) { this.$watch('$store.city.slug', () => this.loadList()); return this.loadList(); }
+      const [cities, d] = await Promise.all([loadJSON('data/cities.json'), loadJSON('data/films.json')]);
+      for (const c of (Array.isArray(cities) ? cities : [])) { const s = c.sites.find(s => s.id === this.id); if (s) { this.site = s; city = this.city = c; break; } }
+      if (!this.site) { this.missing = true; return; }
+      document.title = 'Multiplex ' + this.site.name + ' · Cine Colombia';
+      if (!this.$store.city.slug) this.$store.city.pick(city.slug); // no saved city yet: use this one instead of the IP guess (and its toast)
+      (d.films || []).forEach(x => { films[x.id] = x; });
+      if (!listed(films[this.film])) this.film = null;
+      let i = 0;
+      while (i < 7 && !this.only(await this.day(i)).some(g => g.times.some(s => !(WEEK[i] === TODAY && s.time < this.t)))) i++; // sequential until the first day with functions still ahead (for the chosen film, if any)
+      this.sel = i < 7 ? i : 0;
+      this.now = this.isToday;
+      this.ready = true;
+      this.bg = (this.days[this.sel] || []).map(g => g.f.backdrop).filter(Boolean).slice(0, 4);
+      WEEK.forEach((x, k) => this.day(k)); // remaining days in the background, so the strip can mark empty days
+      setInterval(() => { this.t = hm(); }, 60000);
+    },
+    // List view: one strip per multiplex from the city's first day with showtimes (usually a single file).
+    async loadList() {
+      const c = this.$store.city.slug;
+      if (!c) return;
+      const all = ((await loadJSON('data/films.json')).films || []).filter(listed), get = k => loadDay(c, k);
+      let i = 0, d = {};
+      while (i < 7 && !Object.keys(d = await get(i)).length) i++;
+      if (c !== this.$store.city.slug) return; // city changed while loading
+      const m = {};
+      all.forEach(x => Object.keys(d[x.id] || {}).forEach(sid => (m[sid] = m[sid] || []).push({ id: x.id, title: x.title, p: imgSize(x.poster, 'w185'), tag: filmTag(x) })));
+      this.lmap = m; this.lday = i < 7 ? i : 7; this.lweek = null;
+      // sites missing that day: check the rest of the week before saying "esta semana"
+      const sites = (this.$store.city.cur || { sites: [] }).sites;
+      if (i < 7 && sites.some(s => !m[s.id])) {
+        const rest = await Promise.all(WEEK.map((x, k) => (k > i ? get(k) : {}))), w = new Set();
+        rest.forEach(r => Object.values(r).forEach(v => Object.keys(v).forEach(sid => w.add(sid))));
+        if (c === this.$store.city.slug) this.lweek = w;
+      }
+    },
+    lsub(s) {
+      const n = (this.lmap[s.id] || []).length, d = this.lday >= 0 && this.lday < 7 ? fmtDate(WEEK[this.lday]) : null, when = d ? d.label.toLowerCase() + ' ' + d.day : '';
+      if (n) return n + (n > 1 ? ' películas' : ' película') + ' · ' + when;
+      return d && this.lweek && this.lweek.has(s.id) ? 'Sin funciones ' + when : 'Sin funciones esta semana';
+    },
+    async day(i) {
+      if (this.days[i]) return this.days[i];
+      const d = await loadDay(city.slug, i);
+      return (this.days[i] = Object.keys(d).filter(k => d[k][this.id] && listed(films[k])).map(k => ({ f: films[k], times: d[k][this.id] }))
+        .sort((a, b) => (a.f.priority || 999) - (b.f.priority || 999)));
+    },
+    async pick(i) { this.sel = i; this.f = []; this.now = this.isToday; await this.day(i); }, // today opens with Ahora on: past functions hidden
+    get isToday() { return WEEK[this.sel] === TODAY; },
+    only(d) { return d && this.film ? d.filter(g => g.f.id === this.film) : d; },
+    get D() { return this.days.map(d => this.only(d)); }, // days as seen through the film filter
+    get filmTitle() { return this.film ? films[this.film].title : ''; },
+    clearFilm() { this.film = null; const u = new URL(location.href); u.searchParams.delete('film'); history.replaceState(null, '', u); },
+    get closed() { return this.days.every(d => d && !d.length); },
+    get alt() { const a = this.D.map((d, k) => (d && d.length ? k : -1)).filter(k => k >= 0); return a.find(k => k > this.sel) ?? a.pop() ?? -1; },
+    past(s) { return this.isToday && s.time < this.t; },
+    rel(time) { const [h, m] = time.split(':'), [H, M] = this.t.split(':'), n = (h - H) * 60 + (m - M); return n >= 0 && n < 90 ? 'en ' + n + ' min' : ''; },
+    get attrs() {
+      const all = new Set(), sig = new Set();
+      (this.D[this.sel] || []).forEach(g => g.times.forEach(s => { s.attrs.forEach(a => all.add(a)); sig.add(s.attrs.join()); }));
+      return sig.size > 1 ? [...all].sort((a, b) => rank(a) - rank(b)) : []; // nothing to filter when every function is the same format
+    },
+    ok(s) {
+      if (this.now && this.past(s)) return false;
+      const any = g => !g.length || g.some(a => s.attrs.includes(a)); // OR inside a group, AND across language/format
+      return any(this.f.filter(a => LANG.includes(a))) && any(this.f.filter(a => !LANG.includes(a)));
+    },
+    get list() { return (this.D[this.sel] || []).map(g => ({ f: g.f, times: g.times.filter(s => this.ok(s)) })).filter(g => g.times.length); },
+    get summary() {
+      const t = this.list.flatMap(g => g.times.map(s => s.time)).sort(byTime), n = this.list.length;
+      return t.length ? n + (n > 1 ? ' películas' : ' película') + ' · ' + t.length + (t.length > 1 ? ' funciones' : ' función') + ' · desde ' + t[0] + ' hasta ' + t[t.length - 1] : '';
+    },
+    get next() { // selected day: 3 soonest on sale (today: still ahead), same rule as pelicula.html
+      return (this.D[this.sel] || []).flatMap(g => g.times.filter(s => !s.soldOut && !this.past(s)).map(s => ({ s, f: g.f }))).sort((a, b) => byTime(a.s.time, b.s.time)).slice(0, 3);
+    },
+    tags(s) { return s.attrs.filter(a => a !== '2D').join(' · ') || '2D'; },
+    // same price lookup as boleta.js / pelicula.html
+    price(s) {
+      const PR = this.PR, D = PR && PR._default, key = s.attrs.filter(a => !LANG.includes(a)).join(' ');
+      if (!PR) return '';
+      const bands = (PR[this.id] || {})[key] || (Array.isArray(D) ? D : D && (D[key] || D['2D'])) || [];
+      const b = bands.filter(x => x.from <= s.time).pop() || bands[0];
+      const n = b && b.prices && b.prices.length ? Math.min(...b.prices.map(x => x.price)) : BASE[['Onyx', 'Imax', 'Megasala', 'Dinamix', '3D'].find(f => s.attrs.includes(f)) || '2D'];
+      return 'desde $ ' + n.toLocaleString('es-CO');
+    },
+    // demo: ~1 in 5 "Pocas sillas" (boleta.js hash, same flag as pelicula.html)
+    low(s) { let x = 2166136261; for (const c of s.id + 'p') x = Math.imul(x ^ c.charCodeAt(0), 16777619); return !s.soldOut && !this.past(s) && (x >>> 0) % 5 === 0; },
+    addr(s) {
+      const i = s.address.lastIndexOf(','), tail = i < 0 ? '' : s.address.slice(i + 1).trim(), street = i < 0 ? s.address : s.address.slice(0, i).trim();
+      const cityName = (this.city || this.$store.city.cur || {}).name || '';
+      return { street, place: [/^CC /i.test(tail) ? tidy(tail) : '', cityName].filter(Boolean).join(' · ') };
+    },
+    get sites() { return this.$store.geo.sort(this.$store.city.cur ? this.$store.city.cur.sites : []); }
+  };
+}
+</script>
+</body>
+</html>

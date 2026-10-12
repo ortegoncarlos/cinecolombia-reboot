@@ -1,0 +1,705 @@
+[
+ {
+  "slug": "bogota",
+  "name": "Bogotá",
+  "sites": [
+   {
+    "id": "6871",
+    "name": "Titan",
+    "slug": "titan",
+    "address": "Carrera 72 # 80 - 94, CC TITÁN PLAZA",
+    "lat": 4.6956000328064,
+    "lng": -74.0863037109375
+   },
+   {
+    "id": "6461",
+    "name": "Centro Mayor",
+    "slug": "centro-mayor",
+    "address": "Calle 38 A Sur # 34 D -50, CC CENTRO MAYOR",
+    "lat": 4.59019994735718,
+    "lng": -74.1240005493164
+   },
+   {
+    "id": "6760",
+    "name": "Américas",
+    "slug": "americas",
+    "address": "Transversal 71D # 4-40 Sur, CC AMÉRICAS",
+    "lat": 4.61889982223511,
+    "lng": -74.1371002197266
+   },
+   {
+    "id": "6493",
+    "name": "Andino",
+    "slug": "andino",
+    "address": "Carrera 12 # 82-02, CC ANDINO",
+    "lat": 4.66680002212524,
+    "lng": -74.053596496582
+   },
+   {
+    "id": "6541",
+    "name": "Unicentro",
+    "slug": "unicentro",
+    "address": "Avenida 15 # 124-30, CC UNICENTRO",
+    "lat": 4.70279979705811,
+    "lng": -74.0413970947266
+   },
+   {
+    "id": "6669",
+    "name": "Avenida Chile",
+    "slug": "avenida-chile",
+    "address": "Calle 72 # 10-34, CC AVENIDA CHILE",
+    "lat": 4.65719985961914,
+    "lng": -74.057502746582
+   },
+   {
+    "id": "6501",
+    "name": "Calle 100",
+    "slug": "calle-100",
+    "address": "Transversal 55 # 98A - 66, CC CALLE 100",
+    "lat": 4.68790006637573,
+    "lng": -74.0643005371094
+   },
+   {
+    "id": "6791",
+    "name": "Cedritos",
+    "slug": "cedritos",
+    "address": "Calle 150 # 16- 56, CC CEDRITOS",
+    "lat": 4.73220014572144,
+    "lng": -74.0423965454102
+   },
+   {
+    "id": "6451",
+    "name": "Centro Chía",
+    "slug": "centro-chia",
+    "address": "Avenida Pradilla # 9 - 00 Este, CC CENTRO CHÍA  ",
+    "lat": 4.86590003967285,
+    "lng": -74.0356979370117
+   },
+   {
+    "id": "6754",
+    "name": "Embajador",
+    "slug": "embajador",
+    "address": "Calle 24 # 6 -01, CC EMBAJADOR",
+    "lat": 4.60939979553223,
+    "lng": -74.0691986083984
+   },
+   {
+    "id": "6736",
+    "name": "Galerías",
+    "slug": "galerias",
+    "address": "Calle 53B # 25-21, CC GALERÍAS",
+    "lat": 4.64289999008179,
+    "lng": -74.0744018554688
+   },
+   {
+    "id": "6674",
+    "name": "Gran Estación",
+    "slug": "gran-estacion",
+    "address": "Avenida Calle 26 # 62-42, CC GRAN ESTACIÓN",
+    "lat": 4.64779996871948,
+    "lng": -74.1023025512695
+   },
+   {
+    "id": "6431",
+    "name": "Mercurio",
+    "slug": "mercurio",
+    "address": "Carrera 7 # 32-35 San Mateo, CC MERCURIO",
+    "lat": 4.58790016174316,
+    "lng": -74.2045974731445
+   },
+   {
+    "id": "6536",
+    "name": "Metrópolis",
+    "slug": "metropolis",
+    "address": "Avenida Carrera 68 # 75A-50, CC METRÓPOLIS",
+    "lat": 4.68050003051758,
+    "lng": -74.0813980102539
+   },
+   {
+    "id": "7249",
+    "name": "Nuestro Bogotá",
+    "slug": "nuestro-bogota",
+    "address": "Av Ciudad de Cali #55a-75, CC NUESTRO BOGOTÁ",
+    "lat": 4.68410015106201,
+    "lng": -74.1155014038086
+   },
+   {
+    "id": "6427",
+    "name": "Plaza Central",
+    "slug": "plaza-central",
+    "address": "Carrera 65 #11-50, CC PLAZA CENTRAL",
+    "lat": 4.63210010528564,
+    "lng": -74.1151962280274
+   },
+   {
+    "id": "6630",
+    "name": "Portal 80",
+    "slug": "portal-80",
+    "address": "Calle 80 # 100-52, CC PORTAL 80",
+    "lat": 4.71049976348877,
+    "lng": -74.1118011474609
+   },
+   {
+    "id": "6750",
+    "name": "Portoalegre",
+    "slug": "portoalegre",
+    "address": "Carrera 58A # 137B-01, CC PORTOALEGRE",
+    "lat": 4.72770023345947,
+    "lng": -74.0654983520508
+   },
+   {
+    "id": "6659",
+    "name": "Santafé Bogotá",
+    "slug": "santafe-bogota",
+    "address": "Calle 185 # 45-03, CC SANTAFÉ BOGOTÁ",
+    "lat": 4.7628002166748,
+    "lng": -74.0463027954102
+   },
+   {
+    "id": "7131",
+    "name": "Ventura Terreros",
+    "slug": "ventura-terreros",
+    "address": "Carrera 1 # 38-53 Local 4-16, CC VENTURA TERREROS",
+    "lat": 4.5890998840332,
+    "lng": -74.1945037841797
+   },
+   {
+    "id": "6183",
+    "name": "Lumina",
+    "slug": "lumina",
+    "address": "Calle 114 # 6A - 92, CC LUMINA",
+    "lat": 4.6923999786377,
+    "lng": -74.0330963134766
+   }
+  ],
+  "nowShowingFilmIds": [
+   "HO00000786",
+   "HO00000666",
+   "HO00000724",
+   "HO00000703",
+   "HO00000783",
+   "HO00000633",
+   "HO00000630",
+   "HO00000698",
+   "HO00000736",
+   "HO00000765",
+   "HO00000738",
+   "HO00000669",
+   "HO00000747",
+   "HO00000785",
+   "HO00000779",
+   "HO00000791",
+   "HO00000381",
+   "HO00000882",
+   "HO00000386",
+   "HO00000647",
+   "HO00000600",
+   "HO00000897",
+   "HO00000762",
+   "HO00000790",
+   "HO00000826",
+   "HO00000861",
+   "HO00000851",
+   "HO00000856",
+   "HO00000863",
+   "HO00000864",
+   "HO00000830",
+   "HO00000865",
+   "HO00000834",
+   "HO00000835",
+   "HO00000867",
+   "HO00000868",
+   "HO00000836",
+   "HO00000837",
+   "HO00000870",
+   "HO00000840",
+   "HO00000871",
+   "HO00000841",
+   "HO00000842",
+   "HO00000852",
+   "HO00000843",
+   "HO00000844",
+   "HO00000872",
+   "HO00000845",
+   "HO00000847",
+   "HO00000848",
+   "HO00000849",
+   "HO00000850",
+   "HO00000853",
+   "HO00000876",
+   "HO00000857",
+   "HO00000875"
+  ]
+ },
+ {
+  "slug": "armenia",
+  "name": "Armenia",
+  "sites": [
+   {
+    "id": "6642",
+    "name": "Portal del Quindio",
+    "slug": "portal-del-quindio",
+    "address": "Av. Bolívar #19N-46, CC PORTAL DEL QUINDÍO",
+    "lat": 4.55849981307983,
+    "lng": -75.6549987792969
+   }
+  ],
+  "nowShowingFilmIds": []
+ },
+ {
+  "slug": "barranquilla",
+  "name": "Barranquilla",
+  "sites": [
+   {
+    "id": "7337",
+    "name": "Parque Alegra",
+    "slug": "parque-alegra",
+    "address": "Calle 30 # 4B - 180, CC PARQUE ALEGRA",
+    "lat": 10.944899559021,
+    "lng": -74.7835006713867
+   },
+   {
+    "id": "6772",
+    "name": "Buenavista",
+    "slug": "buenavista",
+    "address": "Calle 98 # 52 - 115, CC BUENAVISTA",
+    "lat": 11.0131998062134,
+    "lng": -74.8300018310547
+   }
+  ],
+  "nowShowingFilmIds": [
+   "HO00000786",
+   "HO00000666",
+   "HO00000724",
+   "HO00000703",
+   "HO00000783",
+   "HO00000633",
+   "HO00000630",
+   "HO00000698",
+   "HO00000736",
+   "HO00000765",
+   "HO00000738",
+   "HO00000747",
+   "HO00000779",
+   "HO00000791",
+   "HO00000790"
+  ]
+ },
+ {
+  "slug": "bucaramanga",
+  "name": "Bucaramanga",
+  "sites": [
+   {
+    "id": "6836",
+    "name": "Cabecera",
+    "slug": "cabecera",
+    "address": "Carrera 35 # 48-131, CC CABECERA",
+    "lat": 7.11549997329712,
+    "lng": -73.1095962524414
+   },
+   {
+    "id": "6687",
+    "name": "Cañaveral",
+    "slug": "canaveral",
+    "address": "Calle 30 # 25-71, CC CAÑAVERAL",
+    "lat": 7.07079982757568,
+    "lng": -73.1070022583008
+   },
+   {
+    "id": "6444",
+    "name": "Delacuesta",
+    "slug": "delacuesta",
+    "address": "Carrera 15 # 3AN-40, CC DELACUESTA ",
+    "lat": 7.00040006637573,
+    "lng": -73.0546035766602
+   },
+   {
+    "id": "6858",
+    "name": "Cacique",
+    "slug": "cacique",
+    "address": "Transversal 93 #34-99, CC CACIQUE ",
+    "lat": 7.09829998016357,
+    "lng": -73.1080017089844
+   }
+  ],
+  "nowShowingFilmIds": [
+   "HO00000786",
+   "HO00000666",
+   "HO00000724",
+   "HO00000703",
+   "HO00000783",
+   "HO00000633",
+   "HO00000630",
+   "HO00000698",
+   "HO00000736",
+   "HO00000765",
+   "HO00000738",
+   "HO00000669",
+   "HO00000747",
+   "HO00000785",
+   "HO00000791",
+   "HO00000790"
+  ]
+ },
+ {
+  "slug": "cali",
+  "name": "Cali",
+  "sites": [
+   {
+    "id": "6162",
+    "name": "Chipichape",
+    "slug": "chipichape",
+    "address": "Avenida 6A Norte # 37N-25, CC CHIPICHAPE",
+    "lat": 3.47530007362366,
+    "lng": -76.5276031494141
+   },
+   {
+    "id": "6742",
+    "name": "Cosmocentro",
+    "slug": "cosmocentro",
+    "address": "Calle 5 # 50-103, CALI",
+    "lat": 3.41400003433228,
+    "lng": -76.5478973388672
+   },
+   {
+    "id": "6646",
+    "name": "Palmetto",
+    "slug": "palmetto",
+    "address": "Carrera 49 # 9-50, CC PALMETTO",
+    "lat": 3.41179990768433,
+    "lng": -76.540901184082
+   },
+   {
+    "id": "6727",
+    "name": "Río Cauca",
+    "slug": "rio-cauca",
+    "address": "Calle 75 A # 20 - 81, CC RIO CAUCA",
+    "lat": 3.44180011749268,
+    "lng": -76.4797973632812
+   },
+   {
+    "id": "7011",
+    "name": "Unicali",
+    "slug": "unicali",
+    "address": "Carrera 100 # 5-169, CALI",
+    "lat": 3.37280011177063,
+    "lng": -76.5389022827148
+   }
+  ],
+  "nowShowingFilmIds": [
+   "HO00000786",
+   "HO00000666",
+   "HO00000724",
+   "HO00000703",
+   "HO00000783",
+   "HO00000633",
+   "HO00000630",
+   "HO00000698",
+   "HO00000736",
+   "HO00000765",
+   "HO00000738",
+   "HO00000669",
+   "HO00000747",
+   "HO00000785",
+   "HO00000779",
+   "HO00000791",
+   "HO00000381",
+   "HO00000882",
+   "HO00000762",
+   "HO00000790"
+  ]
+ },
+ {
+  "slug": "cartagena",
+  "name": "Cartagena",
+  "sites": [
+   {
+    "id": "6401",
+    "name": "Caribe Plaza",
+    "slug": "caribe-plaza",
+    "address": "Calle 29 # 22-108, CARTAGENA",
+    "lat": 10.4147996902466,
+    "lng": -75.5291976928711
+   },
+   {
+    "id": "6601",
+    "name": "Castellana",
+    "slug": "castellana",
+    "address": "Calle 30 #30-31, CARTAGENA",
+    "lat": 10.3937997817993,
+    "lng": -75.486198425293
+   },
+   {
+    "id": "6605",
+    "name": "Bocagrande",
+    "slug": "bocagrande",
+    "address": "Carrera 1 # 12-118, CARTAGENA",
+    "lat": 10.4109001159668,
+    "lng": -75.5506973266602
+   }
+  ],
+  "nowShowingFilmIds": [
+   "HO00000786",
+   "HO00000666",
+   "HO00000724",
+   "HO00000703",
+   "HO00000783",
+   "HO00000630",
+   "HO00000698",
+   "HO00000736",
+   "HO00000765",
+   "HO00000747",
+   "HO00000785",
+   "HO00000779",
+   "HO00000791",
+   "HO00000790"
+  ]
+ },
+ {
+  "slug": "fusagasuga",
+  "name": "Fusagasugá",
+  "sites": [
+   {
+    "id": "7214",
+    "name": "Fusagasugá",
+    "slug": "fusagasuga",
+    "address": "Calle 8 # 24-84, FUSAGASUGA",
+    "lat": 4.34369993209839,
+    "lng": -74.3750991821289
+   }
+  ],
+  "nowShowingFilmIds": [
+   "HO00000786",
+   "HO00000666",
+   "HO00000724",
+   "HO00000703",
+   "HO00000783",
+   "HO00000633",
+   "HO00000698",
+   "HO00000765",
+   "HO00000738"
+  ]
+ },
+ {
+  "slug": "ibague",
+  "name": "Ibagué",
+  "sites": [
+   {
+    "id": "6920",
+    "name": "La Estación",
+    "slug": "la-estacion",
+    "address": "Calle 60 # 12-224, IBAGUE",
+    "lat": 4.44579982757568,
+    "lng": -75.2049026489258
+   }
+  ],
+  "nowShowingFilmIds": [
+   "HO00000786",
+   "HO00000666",
+   "HO00000724",
+   "HO00000703",
+   "HO00000783",
+   "HO00000633",
+   "HO00000630",
+   "HO00000698",
+   "HO00000736",
+   "HO00000765",
+   "HO00000738"
+  ]
+ },
+ {
+  "slug": "manizales",
+  "name": "Manizales",
+  "sites": [
+   {
+    "id": "6485",
+    "name": "Fundadores",
+    "slug": "fundadores",
+    "address": "Calle 33b # 20-03, MANIZALES",
+    "lat": 5.06909990310669,
+    "lng": -75.5093994140625
+   }
+  ],
+  "nowShowingFilmIds": [
+   "HO00000786",
+   "HO00000724",
+   "HO00000703",
+   "HO00000783",
+   "HO00000633",
+   "HO00000630",
+   "HO00000698",
+   "HO00000736",
+   "HO00000765",
+   "HO00000738",
+   "HO00000790"
+  ]
+ },
+ {
+  "slug": "medellin",
+  "name": "Medellín",
+  "sites": [
+   {
+    "id": "6711",
+    "name": "Oviedo",
+    "slug": "oviedo",
+    "address": "Calle 6 Sur # 43A -227, MEDELLIN",
+    "lat": 6.19999980926514,
+    "lng": -75.5758972167969
+   },
+   {
+    "id": "6690",
+    "name": "Molinos",
+    "slug": "molinos",
+    "address": "Calle 30A # 82A -26, MEDELLIN",
+    "lat": 6.23239994049072,
+    "lng": -75.6035995483398
+   },
+   {
+    "id": "6411",
+    "name": "Santafé Medellín",
+    "slug": "santafe-medellin",
+    "address": "Carrera 43 A # 7sur-170, MEDELLIN",
+    "lat": 6.19680023193359,
+    "lng": -75.5731964111328
+   },
+   {
+    "id": "6577",
+    "name": "Unicentro Medellín",
+    "slug": "unicentro-medellin",
+    "address": "Carrera 66 B # 34 A 76, MEDELLIN",
+    "lat": 6.24109983444214,
+    "lng": -75.5869979858398
+   },
+   {
+    "id": "6365",
+    "name": "Viva Envigado",
+    "slug": "viva-envigado",
+    "address": "Carrera 48 # 32B Sur - 139, MEDELLIN",
+    "lat": 6.17770004272461,
+    "lng": -75.5920028686524
+   },
+   {
+    "id": "6192",
+    "name": "Vizcaya",
+    "slug": "vizcaya",
+    "address": "Calle 10 # 32-115, MEDELLIN",
+    "lat": 6.20819997787476,
+    "lng": -75.563102722168
+   }
+  ],
+  "nowShowingFilmIds": [
+   "HO00000786",
+   "HO00000666",
+   "HO00000724",
+   "HO00000703",
+   "HO00000783",
+   "HO00000633",
+   "HO00000630",
+   "HO00000698",
+   "HO00000736",
+   "HO00000765",
+   "HO00000738",
+   "HO00000669",
+   "HO00000747",
+   "HO00000785",
+   "HO00000779",
+   "HO00000791",
+   "HO00000381",
+   "HO00000386",
+   "HO00000600",
+   "HO00000762",
+   "HO00000790"
+  ]
+ },
+ {
+  "slug": "monteria",
+  "name": "Montería",
+  "sites": [
+   {
+    "id": "6851",
+    "name": "Alamedas",
+    "slug": "alamedas",
+    "address": "Calle 44 # 10 - 91, MONTERIA",
+    "lat": 8.76229953765869,
+    "lng": -75.8730010986328
+   }
+  ],
+  "nowShowingFilmIds": [
+   "HO00000786",
+   "HO00000724",
+   "HO00000703",
+   "HO00000783",
+   "HO00000698",
+   "HO00000765",
+   "HO00000738"
+  ]
+ },
+ {
+  "slug": "pereira",
+  "name": "Pereira",
+  "sites": [
+   {
+    "id": "6654",
+    "name": "Victoria",
+    "slug": "victoria",
+    "address": "Carrera 11 Bis # 17 - 20, PEREIRA",
+    "lat": 4.81139993667603,
+    "lng": -75.693000793457
+   }
+  ],
+  "nowShowingFilmIds": []
+ },
+ {
+  "slug": "popayan",
+  "name": "Popayán",
+  "sites": [
+   {
+    "id": "6172",
+    "name": "Terra Plaza",
+    "slug": "terra-plaza",
+    "address": "Carrera 9 # 74N - 40, CC TERRA PLAZA",
+    "lat": 2.48709988594055,
+    "lng": -76.5602035522461
+   }
+  ],
+  "nowShowingFilmIds": [
+   "HO00000786",
+   "HO00000666",
+   "HO00000724",
+   "HO00000703",
+   "HO00000633",
+   "HO00000698",
+   "HO00000736",
+   "HO00000765",
+   "HO00000738"
+  ]
+ },
+ {
+  "slug": "villavicencio",
+  "name": "Villavicencio",
+  "sites": [
+   {
+    "id": "6930",
+    "name": "Viva Villavicencio",
+    "slug": "viva-villavicencio",
+    "address": "Calle 7 # 45-185 Local 201, VILLAVICENCIO",
+    "lat": 4.12589979171753,
+    "lng": -73.6372985839844
+   }
+  ],
+  "nowShowingFilmIds": [
+   "HO00000786",
+   "HO00000666",
+   "HO00000724",
+   "HO00000703",
+   "HO00000783",
+   "HO00000633",
+   "HO00000630",
+   "HO00000698",
+   "HO00000736",
+   "HO00000765",
+   "HO00000738",
+   "HO00000669"
+  ]
+ }
+]

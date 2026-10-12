@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Boletas · Cine Colombia</title>
+<meta name="description" content="Elige tus sillas y compra tus boletas en Cine Colombia.">
+<meta name="theme-color" content="#000">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%230070bd'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='18' fill='%23fff' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://image.tmdb.org">
+<link rel="preload" href="data/films.json" as="fetch" crossorigin>
+<link rel="preload" href="data/cities.json" as="fetch" crossorigin>
+<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/boleta.css">
+<script src="assets/app.js" defer></script>
+<script src="assets/boleta.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.9/cdn.min.js" defer></script>
+</head>
+<body class="bol-page">
+<div class="bol" x-data="boleta()" :data-step="step">
+  <header class="bh">
+    <button class="icon-btn" :aria-label="step === 'seats' || paid ? 'Volver a la película' : 'Paso anterior'" @click="back()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <template x-if="film">
+      <div class="bh-f">
+        <img :src="imgSize(film.poster, 'w92')" @error.once="$el.src = film.poster" width="30" height="45" alt="">
+        <div><b x-text="film.title"></b><small x-text="line"></small></div>
+      </div>
+    </template>
+    <ol class="steps" x-show="film && !err && !paid" aria-label="Pasos">
+      <li :aria-current="step === 'seats' && 'step'">Sillas</li><li :aria-current="step === 'tickets' && 'step'">Boletas</li><li :aria-current="step === 'pay' && 'step'">Pago</li>
+    </ol>
+  </header>
+
+  <p class="bol-load" x-show="loading" role="status">Cargando la sala…</p>
+
+  <div class="nf" x-show="err" x-cloak>
+    <h1 x-text="err === 'nf' ? 'No encontramos esta función' : 'Función agotada'"></h1>
+    <p x-text="err === 'nf' ? 'Puede que ya haya pasado o que el enlace esté incompleto.' : 'Ya no quedan sillas para esta función. Prueba otro horario.'"></p>
+    <a class="btn" :href="film ? 'pelicula.html?id=' + film.id : 'index.html'" x-text="film ? 'Ver otros horarios' : 'Ver cartelera'"></a>
+  </div>
+
+  <main class="bol-main" x-show="film && !err" x-cloak>
+    <section class="bol-step seats" :hidden="step !== 'seats'" aria-labelledby="h-seats">
+      <div class="seats-h">
+        <h1 id="h-seats" tabindex="-1">Elige tus sillas</h1>
+        <span class="zb"><button class="pill ghost zoom" x-show="zoom" @click="zoomTo(1, null, null, true)" aria-label="Volver a 1×, ver toda la sala">1×</button><button class="pill ghost zoom" :aria-pressed="zoom" @click="zoomTo(2, null, null, true)">Ampliar 2×</button></span>
+      </div>
+      <p class="live"><span class="dot" aria-hidden="true"></span><span x-text="viewers + ' personas viendo esta función'"></span><template x-if="scarce"><b x-text="' · Quedan ' + free + ' sillas'"></b></template></p>
+      <p class="est" x-show="estimated">Plano de sala aproximado: no tenemos el plano real de esta sala.</p>
+      <div class="stage" x-ref="stage" :class="{ z: zoom }" @click="tap($event)" @keydown="keys($event)" @pointermove="hover($event)" @pointerleave="unhover()">
+        <div class="pz"><div class="room-w" x-ref="room"></div></div>
+      </div>
+      <ul class="legend" aria-label="Convenciones">
+        <li><i class="k"></i>Disponible</li><li><i class="k sel"></i>Tu selección</li><li><i class="k sold"></i>Ocupada</li>
+        <li x-show="hasW"><svg width="14" height="14" viewBox="-9 -10 18 18" aria-hidden="true"><path d="M-1 -6v5h4l2 3M1 3a3.2 3.2 0 1 1 -4.6 -4"/></svg>Silla de ruedas</li>
+        <li x-show="hasW"><svg width="14" height="14" viewBox="-9 -11 18 18" aria-hidden="true"><path d="M-8 -10h16v5h-16zM-8 -3h16v10h-16zM-3 5a3 3 0 0 1 6 0M1.4 0a1.4 1.4 0 1 1 -2.8 0a1.4 1.4 0 1 1 2.8 0"/></svg>Acompañante</li>
+      </ul>
+      <p class="demo">Ocupación y precios simulados para esta demo</p>
+    </section>
+    <section class="bol-step tickets" :hidden="step !== 'tickets'" aria-labelledby="h-tk">
+      <h1 id="h-tk" tabindex="-1">Tus boletas</h1>
+      <ul class="tk-list">
+        <template x-for="l in lines" :key="l.name">
+          <li class="tk">
+            <span class="tk-n" x-text="l.seats.length + ' ×'"></span>
+            <span class="tk-c"><b x-text="l.name"></b><small x-text="l.seats.map(s => 'Fila ' + s.row + ' ' + s.label).join(' · ')"></small></span>
+            <span class="tk-p"><b x-text="cop(l.price * l.seats.length)"></b><small x-show="l.seats.length > 1" x-text="cop(l.price) + ' c/u'"></small></span>
+          </li>
+        </template>
+      </ul>
+      <dl class="tot"><dt>Total</dt><dd x-text="cop(total)"></dd></dl>
+    </section>
+    <section class="bol-step pay" :hidden="step !== 'pay'" aria-labelledby="h-pay">
+      <h1 id="h-pay" tabindex="-1">Pago</h1>
+      <div class="sumc" x-show="film">
+        <b x-text="film && film.title"></b>
+        <span x-text="line"></span>
+        <span x-text="seatText"></span>
+        <dl class="tot"><dt>Total</dt><dd x-text="cop(total)"></dd></dl>
+      </div>
+      <h2 class="sec" id="h-m">Medio de pago</h2>
+      <div class="methods" role="radiogroup" aria-labelledby="h-m">
+        <template x-for="m in METHODS" :key="m"><button type="button" role="radio" :aria-checked="method === m" @click="method = m" x-text="m"></button></template>
+      </div>
+      <p class="muted">Prototipo: no se cobra nada ni se piden datos de pago.</p>
+    </section>
+    <section class="bol-step done" :hidden="step !== 'done'" aria-labelledby="h-done">
+      <h1 id="h-done" tabindex="-1">¡Listo! Tus boletas</h1>
+      <article class="ticket" x-show="film">
+        <div class="tk-top">
+          <img :src="film && imgSize(film.poster, 'w185')" @error.once="$el.src = film.poster" width="72" height="108" alt="">
+          <div><b x-text="film && film.title"></b><span x-text="line"></span><span class="seats-l" x-text="seatText"></span></div>
+        </div>
+        <div class="tk-qr">
+          <svg viewBox="-2 -2 29 29" width="168" height="168" role="img" aria-label="Código de entrada"><path :d="qr"/></svg>
+          <p>Muestra este código en la entrada</p>
+          <small x-text="t && (t.id + ' · ' + method + ' · ' + cop(total))"></small>
+        </div>
+      </article>
+      <span class="pill ghost soon" aria-disabled="true">Agregar a Wallet <small>próximamente</small></span>
+    </section>
+    <aside class="sbar" x-show="step !== 'done'" aria-label="Resumen">
+      <p class="hold" x-show="left" role="timer" aria-live="off">Tus sillas se liberan en <b x-text="mmss"></b></p>
+      <div class="sbar-r">
+        <div class="sbar-t">
+          <span x-text="sel.length ? sel.length + (sel.length === 1 ? ' silla' : ' sillas') + ' · ' + seatText : 'Toca una silla libre para empezar'"></span>
+          <b x-text="sel.length ? cop(total) : ''"></b>
+        </div>
+        <button class="btn" x-show="step === 'seats'" :disabled="!sel.length" @click="go('tickets')">Continuar</button>
+        <button class="btn" x-show="step === 'tickets'" @click="go('pay')">Continuar</button>
+        <button class="btn" x-show="step === 'pay'" :disabled="busy" @click="pay()" x-text="busy ? 'Procesando…' : 'Pagar ' + cop(total)"></button>
+      </div>
+    </aside>
+  </main>
+</div>
+</body>
+</html>

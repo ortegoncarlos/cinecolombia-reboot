@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Película · Cine Colombia</title>
+<meta name="description" content="Horarios y boletas en Cine Colombia.">
+<meta property="og:type" content="video.movie">
+<meta property="og:title" content="Cine Colombia">
+<meta property="og:description" content="">
+<meta property="og:image" content="">
+<meta name="theme-color" content="#000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%230070bd'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='18' fill='%23fff' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://image.tmdb.org">
+<link rel="preconnect" href="https://www.youtube-nocookie.com">
+<link rel="preload" href="data/films.json" as="fetch" crossorigin>
+<link rel="preload" href="data/cities.json" as="fetch" crossorigin>
+<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/pelicula.css">
+<script src="assets/app.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.9/cdn.min.js" defer></script>
+</head>
+<body>
+<div class="pel" x-data="pel()">
+ <header class="dh" :class="{ stuck }">
+  <button class="icon-btn" aria-label="Volver" @click="back()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <p class="dh-t" aria-hidden="true"><span x-text="film ? section : ''"></span><b x-text="film ? film.title : ''"></b></p>
+  <button class="icon-btn" aria-label="Compartir" :style="film ? '' : 'visibility:hidden'" @click="shareFilm(film)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
+ </header>
+
+ <main class="pel-main page">
+  <div class="nf" x-show="missing" x-cloak>
+   <h1>No encontramos esta película</h1>
+   <p>Puede que ya no esté en cartelera o que el enlace esté incompleto.</p>
+   <a class="btn" href="index.html">Ver cartelera</a>
+  </div>
+
+  <template x-if="film">
+   <div class="pel-grid">
+    <section class="dcard" :class="{ on: shown }" aria-label="Película">
+     <div class="media" :class="{ vert: !!tok }">
+      <div class="mv">
+       <template x-if="film.backdrop"><img class="bd" fetchpriority="high" decoding="async" width="1280" height="720" :src="imgSize(film.backdrop, BD)" alt=""></template>
+       <template x-if="!film.backdrop"><div><img class="fb-bg" decoding="async" :src="imgSize(film.poster, 'w185')" alt=""><img class="fb-poster" fetchpriority="high" decoding="async" width="500" height="750" :src="imgSize(film.poster, 'w500')" alt=""></div></template>
+       <template x-for="u in vid ? [src] : []" :key="u">
+        <iframe class="yt" :class="{ tk: !!tok }" :src="u" x-init="mk($el)" @load="ytLoad($el)" title="Trailer" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true"></iframe>
+       </template>
+      </div>
+      <div class="rail">
+       <button x-show="shown" @click="toggleSound()" :aria-pressed="snd + ''" :aria-label="snd ? 'Silenciar' : 'Activar sonido'">
+        <span class="disc"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path x-show="!snd" d="M17 9l4 6M21 9l-4 6"/><path x-show="snd" d="M17 8a5 5 0 0 1 0 8"/></svg></span>Sonido</button>
+       <button x-show="!vid && (film.youtubeKey || film.verticalTrailer)" @click="vid = true" aria-label="Ver trailer">
+        <span class="disc"><svg viewBox="0 0 24 24" style="fill:#fff;stroke:none"><path d="M7 4.5v15L19.5 12z"/></svg></span>Trailer</button>
+      </div>
+     </div>
+     <div class="info">
+      <div class="chiprow">
+       <img class="poster-chip" decoding="async" width="56" height="84" :src="imgSize(film.poster, 'w185')" :alt="'Póster de ' + film.title">
+       <div>
+        <span class="tag" x-show="filmTag(film)" x-text="filmTag(film)"></span>
+        <span class="kicker" x-show="film.alt" x-text="altLabel(film)"></span>
+        <span class="kicker" x-show="film.releaseDate > TODAY" x-text="'Estreno ' + fmtRelease(film.releaseDate, true)"></span>
+       </div>
+      </div>
+      <h1 class="title" x-text="film.title" x-init="watchTitle($el)"></h1>
+      <p class="alt" x-show="film.titleEs && film.titleEs.trim() !== film.title" x-text="film.titleEs"></p>
+      <div class="meta"><span class="rate" x-show="rateLabel(film.rating)" x-text="rateLabel(film.rating)"></span><span x-text="metaLine(film)"></span></div>
+      <div class="attrs" x-show="film.attributes.length"><template x-for="a in film.attributes" :key="a"><span class="attr" x-text="a"></span></template></div>
+     </div>
+    </section>
+
+    <section class="sch" id="horarios" aria-labelledby="h-hor">
+     <div class="sch-h">
+      <h2 id="h-hor">Horarios</h2>
+      <button class="pill" x-show="film.status !== 'pronto'" @click="$store.city.open = true" :aria-label="'Cambiar ciudad, actual ' + (cn || 'ninguna')">
+       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+       <span x-text="cn || 'Elige tu ciudad'"></span>
+       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+     </div>
+
+     <template x-if="film.status === 'pronto'">
+      <div class="empty">
+       <b x-text="'Estreno ' + fmtRelease(film.releaseDate)"></b>
+      </div>
+     </template>
+
+     <template x-if="film.status !== 'pronto'">
+      <div class="sch-b">
+       <div class="empty" x-show="!$store.city.cur">
+        <b>Elige tu ciudad</b>
+        <p>Así te mostramos los multiplex y las funciones cerca de ti.</p>
+        <div class="acts"><button class="btn" @click="$store.city.open = true">Elegir ciudad</button></div>
+       </div>
+       <div class="empty" x-show="none">
+        <b x-text="'Aún no hay funciones en ' + cn"></b>
+        <p x-text="film.status === 'preventa' ? 'La preventa todavía no tiene horarios publicados para esta semana. Estreno el ' + fmtRelease(film.releaseDate) + '.' : 'Esta película no tiene funciones publicadas en ' + cn + ' del ' + fmtRelease(WEEK[0], 1) + ' al ' + fmtRelease(WEEK[6], 1) + '.'"></p>
+        <div class="acts">
+         <button class="pill ghost" @click="$store.city.open = true">Cambiar ciudad</button>
+        </div>
+       </div>
+
+       <div class="sk" x-show="$store.city.cur && !ready" aria-hidden="true"><i></i><i></i><i></i></div>
+
+       <template x-if="ready && !none">
+        <div class="sch-b">
+         <div class="dates" role="tablist" aria-label="Día">
+          <template x-for="(d, i) in WEEK" :key="d">
+           <button class="date" role="tab" :id="'d' + i" aria-controls="sched" :class="{ none: days[i] && !has(i), unk: !days[i] }" :aria-selected="(sel === i) + ''" :tabindex="sel === i ? 0 : -1" @click="pick(i)" @keydown="nav($event, i)"
+            :aria-label="fmtDate(d).label + ' ' + fmtDate(d).day + (days[i] && !has(i) ? ', sin funciones' : '')"><small x-text="fmtDate(d).label"></small><b x-text="fmtDate(d).day"></b></button>
+          </template>
+         </div>
+         <div id="sched" role="tabpanel" :aria-labelledby="'d' + sel" class="sch-b">
+          <p class="sum" x-show="summary" aria-live="polite"><b x-text="list.length"></b><span x-text="summary"></span></p>
+          <div class="chips" x-show="chips.length || isToday" role="group" aria-label="Filtrar funciones">
+           <button class="chip" x-show="isToday" :aria-pressed="now + ''" @click="now = !now"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Ahora</button>
+           <template x-for="a in chips" :key="a"><button class="chip" :aria-pressed="f.includes(a) + ''" @click="f = f.includes(a) ? f.filter(x => x !== a) : [...f, a]; all = false" x-text="L[a] || a"></button></template>
+          </div>
+
+          <section class="nx" x-show="next.length" aria-labelledby="h-nx">
+           <h3 id="h-nx" x-text="'Próximas funciones · ' + (isToday ? 'hoy' : dl(sel))"></h3>
+           <template x-for="n in next" :key="n.s.id">
+            <a class="nx-r" :href="'boleta.html?show=' + n.s.id"><b x-text="n.s.time"></b><span><span x-text="n.m.name"></span><small x-text="n.s.attrs.join(' ')"></small></span><em x-text="isToday ? rel(n.s.time) : ''"></em></a>
+           </template>
+          </section>
+
+          <template x-for="g in (all ? list : list.slice(0, 4))" :key="g.s.id">
+           <article class="mx">
+            <div class="mx-h">
+             <a class="mx-n" :href="'multiplex.html?id=' + g.s.id"><h3 x-text="g.s.name"></h3><small x-show="km(g.s)" x-text="km(g.s)"></small></a>
+            </div>
+            <div class="sts">
+             <template x-for="s in g.times" :key="s.id">
+              <a class="st" :class="{ past: past(s), next: next[0] && next[0].s === s }" :href="s.soldOut || past(s) ? null : 'boleta.html?show=' + s.id" :aria-disabled="(s.soldOut || past(s)) + ''"
+               :aria-label="s.time + ', ' + (s.soldOut ? 'agotada' : past(s) ? 'ya comenzó' : tags(s) + ', ' + price(g.s.id, s) + (low(s) ? ', pocas sillas' : '') + ', comprar')">
+               <span class="st-k" x-show="next[0] && next[0].s === s">Próxima</span>
+               <b x-text="s.time"></b>
+               <small class="st-p" x-text="s.soldOut ? 'Agotada' : price(g.s.id, s)"></small>
+               <span class="st-t"><template x-for="a in s.attrs.filter(a => a !== '2D')" :key="a"><i :class="{ x: !LANG.includes(a) }" x-text="a === 'Imax' ? 'IMAX' : a"></i></template></span>
+               <em class="st-l" x-show="low(s)">Pocas sillas</em>
+              </a>
+             </template>
+            </div>
+           </article>
+          </template>
+          <button class="pill ghost wide" x-show="!all && list.length > 4" @click="all = true" x-text="'Ver ' + (list.length - 4) + ' multiplex más'"></button>
+          <button class="pill ghost" x-show="list.length > 1 && $store.geo.pos?.src !== 'gps'" @click="$store.geo.ask()">
+           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+           <span x-text="$store.geo.busy ? 'Buscando…' : 'Ordenar con mi ubicación exacta'"></span>
+          </button>
+
+          <div class="empty" x-show="days[sel] && !has(sel)">
+           <b x-text="'No hay funciones el ' + dl(sel)"></b>
+           <p>Los horarios de ese día aún no están publicados.</p>
+           <div class="acts" x-show="alt >= 0"><button class="btn" @click="pick(alt)" x-text="'Ver ' + dl(alt)"></button></div>
+          </div>
+          <div class="empty" x-show="has(sel) && !list.length">
+           <b x-text="f.length ? 'Ninguna función con estos filtros' : 'Ya comenzaron todas las funciones de hoy'"></b>
+           <div class="acts">
+            <button class="btn" x-show="f.length" @click="f = []; now = false">Quitar filtros</button>
+            <button class="btn" x-show="!f.length && alt >= 0" @click="pick(alt)" x-text="'Ver ' + dl(alt)"></button>
+           </div>
+          </div>
+         </div>
+        </div>
+       </template>
+      </div>
+     </template>
+    </section>
+
+    <section class="gal" x-show="items.length" aria-labelledby="h-gal">
+     <h2 id="h-gal">Galería</h2>
+     <div class="gal-s">
+      <template x-for="(it, i) in items" :key="i">
+       <button class="gal-t" @click="lb(i, $el)" :aria-label="it.v ? 'Video: ' + it.v.name : 'Imagen ' + (i + 1)">
+        <img :src="it.v ? thumb(it.v) : it.src" loading="lazy" decoding="async" width="480" height="270" alt="">
+        <span class="gal-v" x-show="it.v"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15L19.5 12z"/></svg><i x-text="it.v && (VT[it.v.type] || 'Video')"></i></span>
+       </button>
+      </template>
+     </div>
+    </section>
+
+    <section class="about" aria-labelledby="h-about">
+     <h2 id="h-about">Acerca de la película</h2>
+     <p class="syn" :class="more || 'clamp'" x-text="film.synopsis || film.shortSynopsis" x-init="$nextTick(() => long = $el.scrollHeight > $el.clientHeight + 2)"></p>
+     <button class="pill ghost" x-show="long" @click="more = !more" :aria-expanded="more + ''" x-text="more ? 'Ver menos' : 'Ver más'"></button>
+     <ul class="cr">
+      <li x-show="film.director"><span>Dirección</span> <span x-text="film.director"></span></li>
+      <li x-show="film.cast.length"><span>Reparto</span> <span x-text="film.cast.map(s => s.replace(/\s+/g, ' ')).join(', ')"></span></li>
+      <li x-show="film.vote"><span>Calificación TMDB</span> <span class="num" x-text="vote"></span></li>
+     </ul>
+    </section>
+   </div>
+  </template>
+ </main>
+
+ <div class="lb" :class="{ on: lbi >= 0 }" x-ref="lb" role="dialog" aria-modal="true" aria-label="Galería" @keydown.escape="lbClose()" @keydown.arrow-right="lbGo(1)" @keydown.arrow-left="lbGo(-1)" @keydown.tab="trap($event)">
+  <div class="lb-h">
+   <span x-text="(lbi + 1) + ' / ' + items.length"></span>
+   <button class="icon-btn" x-ref="lbx" @click="lbClose()" aria-label="Cerrar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="lb-s" x-ref="lbs" @scroll.debounce.80ms="lbSync()">
+   <template x-for="(it, i) in (film ? items : [])" :key="i">
+    <div class="lb-i">
+     <template x-if="it.v && i === lbi"><iframe :src="ytSrc(it.v.key)" :title="it.v.name" allow="autoplay; encrypted-media; fullscreen"></iframe></template>
+     <template x-if="!it.v || i !== lbi"><img :src="it.v ? thumb(it.v) : it.src.replace('/w780/', '/w1280/')" alt="" loading="lazy"></template>
+    </div>
+   </template>
+  </div>
+  <div class="lb-f">
+   <button class="icon-btn" @click="lbGo(-1)" :disabled="lbi < 1" aria-label="Anterior"></button>
+   <button class="icon-btn" @click="lbGo(1)" :disabled="lbi >= items.length - 1" aria-label="Siguiente"></button>
+  </div>
+ </div>
+</div>
+
+<nav class="tabbar" aria-label="Principal">
+ <a href="index.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 4v5M16 4v5"/></svg>Cartelera</a>
+ <a href="multiplex.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Multiplex</a>
+</nav>
+<script>
+// Page component; app.js keeps the older detail().
+function pel() {
+ const hm = () => new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(window.appNow ? appNow() : new Date());
+ const LANG = ['DOB', 'SUB', 'ESP'], ORDER = [...LANG, '3D', 'Dinamix', 'Megasala', 'Imax', 'IFV', 'Onyx', '2D'];
+ const rank = a => (ORDER.indexOf(a) + 1) || 99, BASE = { '2D': 12000, '3D': 18000, Dinamix: 18000, Megasala: 24000, Imax: 24000, Onyx: 32000 };
+ let run = 0, timer, op; // run: stale-city guard; op: lightbox opener
+ return {
+  LANG, PR: null, lbi: -1, VT: { Trailer: 'Tráiler', Teaser: 'Avance', Clip: 'Clip', Featurette: 'Detrás de cámaras', 'Behind the Scenes': 'Detrás de cámaras' }, L: { DOB: 'Doblada', SUB: 'Subtitulada', ESP: 'Español', IFV: 'Infinity Vision' },
+  film: null, missing: false, more: false, long: false, stuck: false,
+  vid: !NOAUTO, shown: false, snd: false, tkFail: false,
+  days: WEEK.map(() => null), sel: 0, ready: false, f: [], now: false, all: false, t: hm(),
+
+  async init() {
+   const id = getQueryParam('id');
+   const f = this.film = ((await loadJSON('data/films.json')).films || []).find(x => x.id === id && listed(x)) || null;
+   if (!f) { this.missing = true; document.title = 'Película no encontrada · Cine Colombia'; return; }
+   const d = f.shortSynopsis || '', t = document.title = f.title + ' · Cine Colombia';
+   [['name=description', d], ['property="og:title"', t], ['property="og:description"', d], ['property="og:image"', f.backdrop || new URL(f.poster, location.href).href]]
+    .forEach(([k, v]) => { const m = document.querySelector('meta[' + k + ']'); if (m) m.content = v; });
+   if (!f.youtubeKey && !f.verticalTrailer) this.vid = false;
+   addEventListener('message', e => this.onMsg(e));
+   addEventListener('popstate', () => this.lbClose(true));
+   ['pointerdown', 'keydown'].forEach(k => addEventListener(k, () => ls.get('cineco.sound') === '1' && !this.snd && this.toggleSound(), { once: true }));
+   loadJSON('data/seats/prices.json').then(p => { this.PR = p; });
+   if (f.status === 'pronto') return;
+   this.$watch('$store.city.slug', c => this.load(c));
+   this.load(this.$store.city.slug);
+   setInterval(() => { this.t = hm(); }, 60000);
+  },
+
+  get tok() { return !this.tkFail && this.film.verticalTrailer; },
+  get src() {
+   const t = this.tok;
+   return t ? 'https://www.tiktok.com/player/v1/' + t.id + '?autoplay=1&muted=1&loop=1&controls=0&progress_bar=0&play_button=0&volume_control=0&fullscreen_button=0&timestamp=0&description=0&music_info=0&rel=0&native_context_menu=0&closed_caption=0'
+    : this.film.youtubeKey ? ytSrc(this.film.youtubeKey, true) : '';
+  },
+  yt() { return this.$root.querySelector('.yt'); },
+  mk(el) {
+   el.tk = !!this.tok; this.shown = false;
+   if (el.tk) setTimeout(() => el.ld || (this.tkFail = true), 4000);
+  },
+  ytLoad(el) {
+   el.rdy = 0; el.ld = 1;
+   if (el.tk) { clearTimeout(timer); timer = setTimeout(() => { this.shown = true; }, 1500); }
+   [0, 500, 1500].forEach(ms => setTimeout(() => ytCmd(el, 'listening'), ms)); },
+  onMsg(e) {
+   const el = this.yt();
+   if (!el || e.source !== el.contentWindow || !/youtube|tiktok/.test(e.origin)) return;
+   let d = e.data; try { if (typeof d === 'string') d = JSON.parse(d); } catch (x) { return; }
+   if (!d) return;
+   const inf = d.event === 'infoDelivery' && d.info || {},
+    st = el.tk ? d.type === 'onStateChange' ? d.value : null : d.event === 'onStateChange' ? d.info : inf.playerState;
+   el.rdy = 1;
+   if (st === 1) { this.shown = true; clearTimeout(timer); if (this.snd) ytCmd(el, 'unMute'); }
+   if (inf.duration) el.dur = inf.duration;
+   if (el.dur && inf.currentTime != null) el.closest('.dcard').style.setProperty('--t', Math.min(inf.currentTime / el.dur, 1));
+  },
+  toggleSound() {
+   const el = this.yt();
+   this.snd = !this.snd; ls.set('cineco.sound', +this.snd);
+   if (this.snd) { ytCmd(el, 'unMute'); ytCmd(el, 'setVolume', [100]); } else ytCmd(el, 'mute');
+  },
+  watchTitle(el) { new IntersectionObserver(es => { this.stuck = !es[0].isIntersecting; }, { rootMargin: '-60px 0px 0px 0px' }).observe(el); },
+
+  async load(c) {
+   const r = ++run;
+   this.days = WEEK.map(() => null); this.ready = false;
+   if (!c) return;
+   let i = 0;
+   for (; i < 7; i++) { await this.day(i, c, r); if (r !== run) return; if (this.ahead(i)) break; }
+   this.pick(i < 7 ? i : 0); this.ready = true;
+   WEEK.forEach((x, k) => this.days[k] || this.day(k, c, r));
+  },
+  async day(i, c, r) {
+   const d = await loadJSON('data/showtimes/' + c + '/' + WEEK[i] + '.json');
+   if (r === run) this.days[i] = d[this.film.id] || {};
+  },
+  has(i) { return Object.keys(this.days[i] || {}).length > 0; },
+  ahead(i) { return Object.values(this.days[i] || {}).some(l => l.some(s => !(WEEK[i] === TODAY && s.time < this.t))); },
+  pick(i) { this.sel = i; this.f = []; this.all = false; this.now = WEEK[i] === TODAY; },
+  nav(e, i) {
+   const n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: 6 }[e.key];
+   if (n == null || n < 0 || n > 6) return;
+   e.preventDefault(); this.pick(n); this.$nextTick(() => document.getElementById('d' + n).focus());
+  },
+  dl(i) { if (i < 0) return ''; const d = fmtDate(WEEK[i]); return d.label.toLowerCase() + ' ' + d.day; },
+  get cn() { return (this.$store.city.cur || {}).name || ''; },
+  get none() { return this.ready && this.days.every(d => d && !Object.keys(d).length); },
+  get alt() { const a = WEEK.map((x, k) => (this.ahead(k) ? k : -1)).filter(k => k >= 0 && k !== this.sel); return a.find(k => k > this.sel) ?? a.pop() ?? -1; },
+  past(s) { return WEEK[this.sel] === TODAY && s.time < this.t; },
+  get raw() { return Object.values(this.days[this.sel] || {}).flat(); },
+  get isToday() { return WEEK[this.sel] === TODAY; },
+  // 3 soonest on sale that day (today: still ahead)
+  get next() {
+    const c = this.$store.city.cur, day = this.days[this.sel] || {};
+    if (!c) return [];
+    return c.sites.filter(m => day[m.id]).flatMap(m => day[m.id].filter(s => !s.soldOut && !this.past(s)).map(s => ({ s, m })))
+      .sort((a, b) => (a.s.time < b.s.time ? -1 : 1)).slice(0, 3);
+  },
+  rel(time) { const [h, m] = time.split(':'), [H, M] = this.t.split(':'), n = (h - H) * 60 + (m - M); return n >= 0 && n < 90 ? 'en ' + n + ' min' : ''; },
+  // attrs that split the day
+  get chips() {
+   const n = {}, r = this.raw;
+   r.forEach(s => s.attrs.forEach(a => { n[a] = (n[a] || 0) + 1; }));
+   return Object.keys(n).filter(a => n[a] < r.length).sort((a, b) => rank(a) - rank(b));
+  },
+  ok(s) {
+   if (this.now && this.past(s)) return false;
+   const any = g => !g.length || g.some(a => s.attrs.includes(a));
+   return any(this.f.filter(a => LANG.includes(a))) && any(this.f.filter(a => !LANG.includes(a)));
+  },
+  get list() {
+   const c = this.$store.city.cur, day = this.days[this.sel] || {};
+   return c ? this.$store.geo.sort(c.sites.filter(s => day[s.id])).map(s => ({ s, times: day[s.id].filter(x => this.ok(x)) })).filter(g => g.times.length) : [];
+  },
+  get summary() {
+   const t = this.list.flatMap(g => g.times.map(s => s.time)).sort(), n = t.length;
+   return n ? ' multiplex · ' + n + (n > 1 ? ' funciones' : ' función') + ' · ' + (n > 1 ? 'desde ' + t[0] + ' hasta ' + t[n - 1] : 'a las ' + t[0]) : '';
+  },
+  tags(s) { return s.attrs.filter(a => a !== '2D').join(' · ') || '2D'; },
+  // same price lookup as boleta.js
+  price(site, s) {
+   const PR = this.PR, D = PR && PR._default, key = s.attrs.filter(a => !LANG.includes(a)).join(' ');
+   if (!PR) return '';
+   const bands = (PR[site] || {})[key] || (Array.isArray(D) ? D : D && (D[key] || D['2D'])) || [];
+   const b = bands.filter(x => x.from <= s.time).pop() || bands[0];
+   const n = b && b.prices && b.prices.length ? Math.min(...b.prices.map(x => x.price)) : BASE[['Onyx', 'Imax', 'Megasala', 'Dinamix', '3D'].find(f => s.attrs.includes(f)) || '2D'];
+   return 'desde $ ' + n.toLocaleString('es-CO');
+  },
+  // demo: ~1 in 5 "Pocas sillas" (boleta.js hash)
+  low(s) { let x = 2166136261; for (const c of s.id + 'p') x = Math.imul(x ^ c.charCodeAt(0), 16777619); return !s.soldOut && !this.past(s) && (x >>> 0) % 5 === 0; },
+  km(s) { const k = this.$store.geo.d(s); return k == null ? '' : (this.$store.geo.pos.src === 'ip' ? 'aprox. ' : '') + fmtKm(k); },
+
+  get section() { const f = this.film; return f.alt ? 'Alternativo' : { cartelera: 'Cartelera', preventa: 'Preventa', pronto: 'Pronto' }[f.status]; },
+  get vote() { return this.film.vote ? this.film.vote.toLocaleString('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' ★' : ''; },
+  // gallery: videos, then stills; lightbox = snap scroller + history entry
+  get items() { const f = this.film; return f ? [...(f.videos || []).map(v => ({ v })), ...(f.gallery || []).map(src => ({ src }))] : []; },
+  thumb(v) { return 'https://i.ytimg.com/vi/' + v.key + '/hqdefault.jpg'; },
+  lb(i, el) {
+   op = el; this.lbi = i; history.pushState({ lb: 1 }, ''); ytCmd(this.yt(), 'pauseVideo');
+   document.documentElement.style.overflow = 'hidden';
+   this.$nextTick(() => { const s = this.$refs.lbs; s.scrollLeft = i * s.clientWidth; this.$refs.lbx.focus(); });
+  },
+  lbClose(pop) {
+   if (this.lbi < 0) return;
+   if (!pop && history.state && history.state.lb) return history.back(); // popstate closes
+   this.lbi = -1; document.documentElement.style.overflow = ''; ytCmd(this.yt(), 'playVideo'); op && op.focus();
+  },
+  lbGo(d) { const s = this.$refs.lbs; s.scrollTo({ left: (this.lbi + d) * s.clientWidth, behavior: RM ? 'auto' : 'smooth' }); },
+  lbSync() { const s = this.$refs.lbs; if (this.lbi >= 0) this.lbi = Math.round(s.scrollLeft / s.clientWidth); },
+  trap(e) {
+   const b = [...this.$refs.lb.querySelectorAll('button:not([disabled])')], i = b.indexOf(document.activeElement);
+   if (e.shiftKey ? i <= 0 : i === b.length - 1) { e.preventDefault(); b[e.shiftKey ? b.length - 1 : 0].focus(); }
+  },
+  back() { history.length > 1 && document.referrer ? history.back() : (location.href = 'index.html'); }
+ };
+}
+</script>
+</body>
+</html>
