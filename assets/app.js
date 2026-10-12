@@ -379,6 +379,7 @@ function feed() {
       // Preload in the direction of travel (swiping back is as common as forward), skipping a divider card; the other way at the ends.
       const dir = i < prev ? -1 : 1; let k = this.nb(i, dir); if (k < 0) k = this.nb(i, -dir);
       this.active = i; this.playing = false; this.wait = 0; this.nxt = k; this.wake();
+      if (window.zombies) { const f = this.queue[i] && this.queue[i].f; f && /resident evil/i.test(f.title) ? zombies.start(this.$refs.feed.querySelector('.card[data-i="' + i + '"]'), 4000) : zombies.stop(); } // easter egg
       const up = this.$refs.feed.querySelector('.up'); if (up) up.style.setProperty('--t', 0);
       dbg('active', i, (this.queue[i] && (this.queue[i].f || this.queue[i].p || this.queue[i]).title || '').slice(0, 20), 'clip=' + !!clip, 'pre=' + (o.i === i), 'next=' + this.nxt);
       if (NOAUTO) return;

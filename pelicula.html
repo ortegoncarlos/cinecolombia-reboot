@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="assets/app.css">
 <link rel="stylesheet" href="assets/pelicula.css">
 <script src="assets/app.js" defer></script>
+<script src="assets/zombies.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.9/cdn.min.js" defer></script>
 </head>
 <body>
@@ -251,6 +252,7 @@ function pel() {
    [['name=description', d], ['property="og:title"', t], ['property="og:description"', d], ['property="og:image"', f.backdrop || new URL(f.poster, location.href).href]]
     .forEach(([k, v]) => { const m = document.querySelector('meta[' + k + ']'); if (m) m.content = v; });
    if (!f.youtubeKey && !f.verticalTrailer) this.vid = false;
+   if (window.zombies && /resident evil/i.test(f.title)) this.$nextTick(() => zombies.start(this.$root.querySelector('.dcard'), 3000)); // easter egg
    addEventListener('message', e => this.onMsg(e));
    addEventListener('popstate', () => this.lbClose(true));
    ['pointerdown', 'keydown'].forEach(k => addEventListener(k, () => ls.get('cineco.sound') === '1' && !this.snd && this.toggleSound(), { once: true }));
