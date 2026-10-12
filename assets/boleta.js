@@ -1,5 +1,5 @@
 'use strict';
-/* Boletas: hairline room (seats) → ticket types → mock payment. Room shapes are real (data/seats/layouts);
+/* Boletas: hairline room (seats) → ticket types → confitería (data/food.json) → mock payment. Room shapes are real (data/seats/layouts);
    occupancy, the other buyers and prices are a seeded simulation for the demo. Needs app.js. */
 
 const MAX = 8, HOLD = 420; // seats per order, hold time in s
@@ -62,6 +62,7 @@ function boleta() {
   return {
     step: 'seats', loading: true, err: '', film: null, site: null, t: null, date: '', fmt: '2D', sala: '', estimated: false,
     prices: [], sel: [], total0: 0, free: 0, viewers: 0, left: 0, zoom: false, hasW: false, method: 'Tarjeta', busy: false, paid: false, qr: '',
+    menu: [], food: {}, // food: id → { qty, opts: { label: choice } }
 
     async init() {
       const id = getQueryParam('show') || '';
@@ -90,7 +91,8 @@ function boleta() {
       const t = this.t;
       document.title = 'Boletas · ' + this.film.title + ' · Cine Colombia';
       this.fmt = FMTS.find(f => t.attrs.includes(f)) || '2D';
-      const [show, PR] = await Promise.all([t.seats ? loadJSON('data/seats/shows/' + id + '.json') : {}, loadJSON('data/seats/prices.json')]); // only flagged shows have a captured file (no 404s)
+      const [show, PR, menu] = await Promise.all([t.seats ? loadJSON('data/seats/shows/' + id + '.json') : {}, loadJSON('data/seats/prices.json'), loadJSON('data/food.json')]);
+      this.menu = Array.isArray(menu) ? menu : []; // only flagged shows have a captured file (no 404s)
       const lay = t.layout || show.layout, L = lay ? await loadJSON('data/seats/layouts/' + lay + '.json') : {};
       const sc = String(t.screen || show.screen || (lay || '').split('-')[1] || '');
       this.sala = sc && (/^\d+$/.test(sc) ? 'Sala ' + sc : sc);
@@ -326,7 +328,22 @@ function boleta() {
       this.chosen.forEach(s => { const l = by[s.cls.name] = by[s.cls.name] || { name: s.cls.name, price: s.cls.price, seats: [] }; l.seats.push(s); });
       return Object.values(by);
     },
-    get total() { return this.chosen.reduce((a, s) => a + s.cls.price, 0); },
+    get total() { return this.chosen.reduce((a, s) => a + s.cls.price, 0) + this.foodTotal; },
+    // Confitería: options default to their first choice, so a line is always complete.
+    get groups() { return [...new Set(this.menu.map(i => i.group))].map(name => ({ name, items: this.menu.filter(i => i.group === name) })); },
+    qty(i) { return (this.food[i.id] || {}).qty || 0; },
+    add(i, d) {
+      const c = this.food[i.id] || { qty: 0, opts: Object.fromEntries((i.options || []).map(o => [o.label, o.choices[0]])) }, n = Math.min(10, c.qty + d);
+      if (n <= 0) { const { [i.id]: _, ...rest } = this.food; this.food = rest; } else this.food = { ...this.food, [i.id]: { ...c, qty: n } };
+    },
+    get foodLines() { return this.menu.filter(i => this.qty(i)).map(i => ({ ...i, qty: this.qty(i), opts: (i.options || []).map(o => this.food[i.id].opts[o.label]).join(' · ') })); },
+    get foodCount() { return this.foodLines.reduce((a, l) => a + l.qty, 0); },
+    get foodTotal() { return this.foodLines.reduce((a, l) => a + l.qty * l.price, 0); },
+    get sbarText() {
+      const n = this.sel.length, m = this.foodCount;
+      if (!n) return 'Elige una silla libre para empezar';
+      return m ? n + (n === 1 ? ' boleta · ' : ' boletas · ') + m + (m === 1 ? ' producto' : ' productos') : n + (n === 1 ? ' silla' : ' sillas') + ' · ' + this.seatText;
+    },
     get when() { if (!this.date) return ''; const d = fmtDate(this.date); return d.label + ' ' + d.day; },
     get line() { return [this.site && this.site.name, this.sala, this.when, this.t && this.t.time, this.t && this.t.attrs.filter(x => x.toLowerCase() !== String(this.sala).toLowerCase()).join(' · ')].filter(Boolean).join(' · '); },
 

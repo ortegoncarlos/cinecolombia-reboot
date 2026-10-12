@@ -33,7 +33,7 @@
       </div>
     </template>
     <ol class="steps" x-show="film && !err && !paid" aria-label="Pasos">
-      <li :aria-current="step === 'seats' && 'step'">Sillas</li><li :aria-current="step === 'tickets' && 'step'">Boletas</li><li :aria-current="step === 'pay' && 'step'">Pago</li>
+      <li :aria-current="step === 'seats' && 'step'">Sillas</li><li :aria-current="step === 'tickets' && 'step'">Boletas</li><li :aria-current="step === 'food' && 'step'">Confitería</li><li :aria-current="step === 'pay' && 'step'">Pago</li>
     </ol>
   </header>
 
@@ -76,12 +76,46 @@
       </ul>
       <dl class="tot"><dt>Total</dt><dd x-text="cop(total)"></dd></dl>
     </section>
+    <section class="bol-step food" :hidden="step !== 'food'" aria-labelledby="h-food">
+      <div class="seats-h"><h1 id="h-food" tabindex="-1">¿Algo de la confitería?</h1><button class="pill ghost" @click="food = {}; go('pay')">Omitir</button></div>
+      <p class="muted">Recoge tu pedido en la confitería mostrando tu boleta</p>
+      <template x-for="g in groups" :key="g.name">
+        <div class="fg">
+          <h2 class="sec"><i aria-hidden="true" x-text="g.name[0]"></i><span x-text="g.name"></span></h2>
+          <ul class="fl">
+            <template x-for="i in g.items" :key="i.id">
+              <li class="fi">
+                <div class="fi-r">
+                  <span class="tk-c"><b><span x-text="i.name"></span> <span class="attr" x-show="i.tag" x-text="i.tag"></span></b><small x-text="i.desc"></small><span class="fi-p" x-text="cop(i.price)"></span></span>
+                  <span class="qty">
+                    <button type="button" class="icon-btn" x-show="qty(i)" :aria-label="'Quitar ' + i.name" @click="add(i, -1)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+                    <output x-show="qty(i)" x-text="qty(i)" :aria-label="qty(i) + ' ' + i.name"></output>
+                    <button type="button" class="icon-btn" :aria-label="'Agregar ' + i.name" @click="add(i, 1)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+                  </span>
+                </div>
+                <template x-if="qty(i) && i.options">
+                  <div class="fo">
+                    <template x-for="o in i.options" :key="o.label">
+                      <div class="methods" role="radiogroup" :aria-label="o.label + ', ' + i.name" @keydown="tabKeys($event)">
+                        <small x-text="o.label"></small>
+                        <template x-for="c in o.choices" :key="c"><button type="button" role="radio" :aria-checked="food[i.id].opts[o.label] === c" :tabindex="food[i.id].opts[o.label] === c ? 0 : -1" @click="food[i.id].opts[o.label] = c" x-text="c"></button></template>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </template>
+    </section>
     <section class="bol-step pay" :hidden="step !== 'pay'" aria-labelledby="h-pay">
       <h1 id="h-pay" tabindex="-1">Pago</h1>
       <div class="sumc" x-show="film">
         <b x-text="film && film.title"></b>
         <span x-text="line"></span>
         <span x-text="seatText"></span>
+        <template x-if="foodLines.length"><ul class="fsum"><template x-for="l in foodLines" :key="l.id"><li><span><b x-text="l.qty + ' × ' + l.name"></b><small x-show="l.opts" x-text="l.opts"></small></span><span x-text="cop(l.qty * l.price)"></span></li></template></ul></template>
         <dl class="tot"><dt>Total</dt><dd x-text="cop(total)"></dd></dl>
       </div>
       <h2 class="sec" id="h-m">Medio de pago</h2>
@@ -103,17 +137,23 @@
           <small x-text="t && (t.id + ' · ' + method + ' · ' + cop(total))"></small>
         </div>
       </article>
+      <div class="fdone" x-show="foodLines.length">
+        <h2 class="sec">Confitería</h2>
+        <ul class="fsum"><template x-for="l in foodLines" :key="l.id"><li><span><b x-text="l.qty + ' × ' + l.name"></b><small x-show="l.opts" x-text="l.opts"></small></span><span x-text="cop(l.qty * l.price)"></span></li></template></ul>
+        <p class="muted">Recoge en confitería mostrando esta boleta.</p>
+      </div>
       <span class="pill ghost soon" aria-disabled="true">Agregar a Wallet <small>próximamente</small></span>
     </section>
     <aside class="sbar" x-show="step !== 'done'" aria-label="Resumen">
       <p class="hold" x-show="left" role="timer" aria-live="off">Tus sillas se liberan en <b x-text="mmss"></b></p>
       <div class="sbar-r">
         <div class="sbar-t">
-          <span x-text="sel.length ? sel.length + (sel.length === 1 ? ' silla' : ' sillas') + ' · ' + seatText : 'Elige una silla libre para empezar'"></span>
+          <span x-text="sbarText"></span>
           <b x-text="sel.length ? cop(total) : ''"></b>
         </div>
         <button class="btn" x-show="step === 'seats'" :disabled="!sel.length" @click="go('tickets')">Continuar</button>
-        <button class="btn" x-show="step === 'tickets'" @click="go('pay')">Continuar</button>
+        <button class="btn" x-show="step === 'tickets'" @click="go('food')">Continuar</button>
+        <button class="btn" x-show="step === 'food'" @click="go('pay')">Continuar</button>
         <button class="btn" x-show="step === 'pay'" :disabled="busy" @click="pay()" x-text="busy ? 'Procesando…' : 'Pagar ' + cop(total)"></button>
       </div>
     </aside>

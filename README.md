@@ -21,6 +21,8 @@ The film, cinema and showtime data is a one-time snapshot of Cine Colombia's pub
 
 The demo clock is frozen at 11 October 2026 22:00 (Bogotá) to match the snapshot; set `DEMO_NOW` in `assets/app.js` to `null` for live time.
 
+The Confitería step of the ticket flow reads `data/food.json`, a sample menu (combos, crispetas, bebidas, snacks) with illustrative prices, not Cine Colombia's real menu or prices.
+
 ## Promos
 
 Promo cards in the Cartelera feed (currently one TikTok video) come from `data/promos.json`: `after: n` places the card after the n-th film. Edit that file to add, move or remove promos.
