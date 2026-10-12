@@ -79,6 +79,11 @@ class Harness {
   async cmds(i) { return (await this.page.evaluate(() => window.__cmds)).filter(c => c[1] !== 'listening' && (i == null || c[0] === String(i))).map(c => c[1]); }
   mark() { return this.page.evaluate(() => window.__cmds.length); }
   async since(n, i) { return (await this.page.evaluate(n => window.__cmds.slice(n), n)).filter(c => c[1] !== 'listening' && (i == null || c[0] === String(i))).map(c => c[1]); }
+  // Next card starts with sound: YouTube unMute on ready; TikTok from its muted=0 autoplay URL (no unMute message).
+  async startsWithSound(i, n) {
+    const src = await this.page.evaluate(i => document.querySelector('[data-i="' + i + '"] .yt').src, i), c = await this.since(n, i);
+    return /tiktok/.test(src) ? src.includes('muted=0') && !c.includes('unMute') : c.includes('unMute');
+  }
   toast() { return this.page.evaluate(() => document.getElementById('toast').textContent); }
 }
 
@@ -134,7 +139,7 @@ test('4 first gesture on a muted card, iOS pauses it: remute this card, next car
   n = await h.mark();
   await h.scrollTo(1);
   if (!(await h.page.evaluate(() => document.querySelector('[data-i="1"] .yt').rdy))) await h.ready(1);
-  assert((await h.since(n, 1)).includes('unMute'), 'next card should start unmuted: ' + (await h.since(n, 1)));
+  assert(await h.startsWithSound(1, n), 'next card should start unmuted: ' + (await h.since(n, 1)));
   assert(await h.get('d.pm') === false, 'pm should be false on the next card');
   await h.close();
 });
@@ -182,11 +187,13 @@ test('6 toggle off / on: saved and applied to later cards', async () => {
   await h.close();
 });
 
-test('7 TikTok preload activation: seekTo, unMute, playVideo', async () => {
-  const h = await open({ sound: '1' });
+// TikTok card 1 preloaded hidden (muted, paused by us), then activated.
+async function tkPreloaded(sound) {
+  const h = await open({ sound });
   await h.gesture(); await h.ready(0); await h.playing(0);
   assert(await h.get('d.tok(1)'), 'card 1 is expected to be a TikTok card');
   await h.page.waitForFunction(() => { const f = document.querySelector('[data-i="1"] .yt'); return f && f.ld; });
+  assert(await h.page.evaluate(() => document.querySelector('[data-i="1"] .yt').src.includes('muted=1')), 'TikTok preload must be muted=1');
   await h.send(1, null, { type: 'onPlayerReady' });
   await h.playing(1);
   assert((await h.cmds(1)).join() === 'pauseVideo', 'hidden preload should be paused by us: ' + (await h.cmds(1)));
@@ -194,8 +201,19 @@ test('7 TikTok preload activation: seekTo, unMute, playVideo', async () => {
   assert(!(await h.cmds(1)).includes('mute'), 'remute on our own preload pause');
   const n = await h.mark();
   await h.scrollTo(1);
-  const c = await h.since(n, 1);
-  assert(c.join() === 'seekTo,unMute,setVolume,playVideo', 'expected seekTo,unMute,setVolume,playVideo, got ' + c);
+  return [h, await h.since(n, 1)];
+}
+
+test('7 TikTok preload activation: sound on = muted=0 reload, no unMute/playVideo; off = seekTo,playVideo', async () => {
+  let [h, c] = await tkPreloaded('0');
+  assert(c.join() === 'seekTo,playVideo', 'sound off: expected seekTo,playVideo, got ' + c);
+  await h.close();
+  [h, c] = await tkPreloaded('1');
+  assert(!c.includes('unMute') && !c.includes('playVideo'), 'sound on: no unMute/playVideo by message, got ' + c);
+  const src = await h.page.evaluate(() => document.querySelector('[data-i="1"] .yt').src);
+  assert(src.includes('muted=0') && src.includes('autoplay=1'), 'sound on: expected muted=0&autoplay=1 reload, got ' + src);
+  await h.ready(1);
+  assert(!(await h.cmds(1)).includes('unMute'), 'unMute on TikTok ready');
   await h.playing(1);
   assert(await h.get('d.playing'), 'not playing');
   await h.send(1, null, { type: 'onMute', value: true }); assert(await h.get('d.pm') === true, 'onMute true not synced');
@@ -244,7 +262,7 @@ test('10 desktop: wheel is a gesture, next card unmutes on ready', async () => {
   await h.page.waitForFunction(() => Alpine.$data(document.querySelector('[x-data="feed()"]')).active === 1);
   assert(await h.get('d.gest'), 'wheel did not set gest');
   await h.ready(1);
-  assert((await h.cmds(1)).includes('unMute'), 'next card should unmute on ready');
+  assert(await h.startsWithSound(1, 0), 'next card should start with sound');
   await h.close();
 });
 
@@ -255,6 +273,27 @@ test('11 card 0 revealed only once playing', async () => {
   await h.playing(0);
   await h.page.waitForFunction(() => document.querySelector('[data-i="0"]').classList.contains('play'));
   assert(!h.errors.length, 'page errors: ' + h.errors.join('; '));
+  await h.close();
+});
+
+test('12 TikTok preload src is always muted=1', async () => {
+  for (const sound of ['0', '1']) {
+    const h = await open({ sound });
+    await h.gesture(); await h.ready(0); await h.playing(0);
+    await h.page.waitForFunction(() => { const f = document.querySelector('[data-i="1"] .yt'); return f && f.ld; });
+    const src = await h.page.evaluate(() => document.querySelector('[data-i="1"] .yt').src);
+    assert(/tiktok/.test(src) && src.includes('muted=1'), 'sound=' + sound + ': preload src ' + src);
+    await h.close();
+  }
+});
+
+test('13 toggleSound on a playing TikTok card: unMute + setVolume (tap path)', async () => {
+  const [h] = await tkPreloaded('0');
+  await h.playing(1);
+  const n = await h.mark();
+  await h.tapSound();
+  const c = await h.since(n, 1), u = c.indexOf('unMute');
+  assert(u >= 0 && c[u + 1] === 'setVolume', 'expected unMute,setVolume, got ' + c);
   await h.close();
 });
 

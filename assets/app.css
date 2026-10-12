@@ -107,9 +107,8 @@ h1,h2,h3,p{margin:0}
 .card.vert .media{position:absolute;inset:var(--top-h) 0 var(--tabbar)}
 .card.vert .media::after{height:55%}
 .media .tk{--h:calc(100cqh + var(--tt-chrome));top:calc(50% - var(--tt-chrome)/2);width:max(100cqw,var(--h)*9/16);height:max(var(--h),100cqw*16/9);scale:1.02} /* 9:16 cover, top edge at -chrome; settles to 1 on reveal */
-@media (max-width:1023px){ /* phones: size by height (80 top / 40 bottom crop), no width cover; blurred backdrop fills any side bars */
-  .media .tk{top:calc(50% - (var(--tt-chrome) - 40px)/2);height:calc(100cqh + var(--tt-chrome) + 40px);width:calc((100cqh + var(--tt-chrome) + 40px)*9/16)}
-  .card.vert.play .bd{filter:blur(24px) brightness(.7);scale:1.25}
+@media (max-width:1023px){ /* phones: full-width cover anchored at the top (chrome hidden, 80 px crop), overflow at the bottom */
+  .media .tk{top:calc(-1*var(--tt-chrome));translate:-50% 0;height:max(100cqw*16/9,100cqh + var(--tt-chrome));width:max(100cqw,(100cqh + var(--tt-chrome))*9/16)}
 }
 .tk-mark{width:56px;height:56px;margin:auto;opacity:.5}
 .btn.sec2{background:var(--chip);border:1px solid var(--line)}
@@ -120,7 +119,7 @@ h1,h2,h3,p{margin:0}
 .card .media.is-fs{position:fixed;inset:0;z-index:30;background:#000}
 .is-fs::before,.is-fs::after,.is-fs>:not(.yt,.fsc){display:none}
 .is-fs .yt{width:min(100cqw,100cqh*16/9);height:min(100cqh,100cqw*9/16);scale:1;pointer-events:auto}
-.is-fs .tk{top:50%;width:min(100cqw,100cqh*9/16);height:min(100cqh,100cqw*16/9)}
+.is-fs .tk{top:50%;translate:-50% -50%;width:min(100cqw,100cqh*9/16);height:min(100cqh,100cqw*16/9)}
 body:has(.is-fs) :is(.top,.tabbar){display:none}
 .fsc button{pointer-events:auto}
 /* autoplay blocked: big play control; the player shows its own poster/button and takes taps (scrim shield off) */

@@ -394,7 +394,7 @@ function feed() {
     src(i, auto = 1) {
       const t = this.tok(i);
       return !t ? ytSrc(this.queue[i].f.youtubeKey, true, auto) : 'https://www.tiktok.com/player/v1/' + t.id + '?autoplay=' + auto +
-        '&muted=1&loop=1&controls=0&progress_bar=0&play_button=0&volume_control=0&fullscreen_button=0&timestamp=0&description=0&music_info=0&rel=0&native_context_menu=0&closed_caption=0';
+        '&muted=' + +!(this.soundOn && this.gest && i === this.active) + '&loop=1&controls=0&progress_bar=0&play_button=0&volume_control=0&fullscreen_button=0&timestamp=0&description=0&music_info=0&rel=0&native_context_menu=0&closed_caption=0';
     },
     yt(i = this.active) { return this.$refs.feed.querySelector('[data-i="' + i + '"] .yt'); },
     // At most 2 iframes: active card + hidden paused preload of the next film (skipping a divider).
@@ -416,11 +416,14 @@ function feed() {
       // Preloaded YouTube (autoplay=0): switch to the autoplay URL (files cached).
       // ponytail: not playVideo on the paused preload: YouTube then overlays its pause/prev/next controls for ~4 s.
       // Preloaded TikTok (autoplay=1, paused once it plays): seek to 0 + play; still playing hidden: show now.
+      // With sound: reload with muted=0 (iOS refuses unMute+playVideo by message on a paused TikTok player; a player that
+      // starts by itself unmuted after the page's gesture plays with sound, like YouTube). The preload buffered the file.
       // From scratch: create at once for the first card, else after 600 ms (flick-scrolling).
       const el = this.yt(), it = this.queue[i];
       if (key) dt = setTimeout(() => { if (this.active === i && !this.playing && !this.blocked) { (it.p || it.f).dead = true; dbg('dead', i); } }, 20000);
       if (ready && !el) this.vid = i; // preload not rendered yet (fast jumps): create the player now
-      else if (ready && el.tk && el.rdy) { ytCmd(el, 'seekTo', [0]); this.sound(el); ytCmd(el, 'playVideo'); if (el.st === 1) { this.playing = true; this.wake(); } else this.arm(el); }
+      else if (ready && el.tk && this.soundOn && this.gest) { dbg('tt reload', i, 'muted=0'); el.rdy = 0; el.st = null; el.src = this.src(i); }
+      else if (ready && el.tk && el.rdy) { ytCmd(el, 'seekTo', [0]); ytCmd(el, 'playVideo'); if (el.st === 1) { this.playing = true; this.wake(); } else this.arm(el); }
       else if (ready) el.src = this.src(i);
       else if (key) timer = setTimeout(() => { this.vid = i; }, first ? 0 : 600);
     },
@@ -449,13 +452,14 @@ function feed() {
       }, this.blocked ? 0 : ms);
     },
     tapPlay() {
-      const el = this.yt(); this.wait = 2; this.gest = true; if (el) el.rdy = 1; dbg('tap'); this.sound(el); ytCmd(el, 'playVideo'); // a silent TikTok player never marked itself ready
+      const el = this.yt(); this.wait = 2; this.gest = true; if (el) el.rdy = 1; dbg('tap'); this.sound(el, 1); ytCmd(el, 'playVideo'); // a silent TikTok player never marked itself ready
       // ponytail: TikTok ignoring the play message: reload it with its own play button (a tap inside the frame is a valid gesture)
       if (el && el.tk) setTimeout(() => { if (this.wait === 2 && !this.playing && el.isConnected) { el.own = 1; el.src = el.src.replace('autoplay=1', 'autoplay=0').replace('play_button=0', 'play_button=1'); } }, 1500);
     },
     // Single choke point for unmuting. iOS: no sound before the page's first gesture; after it, a player unmuted before it
-    // starts plays with sound. Called on ready, on preload restart, on playing (fallback), on Sonido. el.ut arms the remute check.
-    sound(el = this.yt()) { if (this.soundOn && this.gest && el && el.rdy) { dbg('sound', di(el)); el.ut = Date.now(); this.pm = false; ytCmd(el, 'unMute'); ytCmd(el, 'setVolume', [100]); } },
+    // starts plays with sound. Called on ready, on playing (fallback), on Sonido. el.ut arms the remute check.
+    // TikTok: only on a real tap (tap = 1: Sonido, play control); otherwise its sound comes from the muted=0 URL (src).
+    sound(el = this.yt(), tap) { if (el && el.tk && !tap) return; if (this.soundOn && this.gest && el && el.rdy) { dbg('sound', di(el)); el.ut = Date.now(); this.pm = false; ytCmd(el, 'unMute'); ytCmd(el, 'setVolume', [100]); } },
     // 'listening' (YouTube) is lost while the player's script is still loading (seconds on a phone): repeat it every
     // 500 ms until the first answer marks the player ready (20 s cap).
     ytLoad(el) {
@@ -468,7 +472,7 @@ function feed() {
     toggleSound() {
       this.soundOn = !this.snd; this.pm = !this.soundOn; this.gest = true; this.wake();
       ls.set('cineco.sound', +this.soundOn);
-      if (this.soundOn) this.sound(); else ytCmd(this.yt(), 'mute');
+      if (this.soundOn) this.sound(undefined, 1); else ytCmd(this.yt(), 'mute');
     },
     // .media goes fullscreen, or becomes a fixed overlay without the API (iPhone Safari).
     // Available before the trailer plays (and with autoplay off): creates the player if the card has none yet.
