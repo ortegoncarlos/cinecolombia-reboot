@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>yt autoplay exp</title>
+<style>
+html,body{margin:0;background:#000;color:#9f9;font:11px/1.3 monospace}
+#box{position:relative;width:100vw;height:60vh;overflow:hidden;container-type:size;background:#123}
+#box iframe{border:0;position:absolute;inset:0;width:100%;height:100%}
+#log{position:fixed;left:0;bottom:0;max-height:38vh;overflow:auto;margin:0;padding:4px;white-space:pre-wrap;background:rgba(0,0,0,.8)}
+/* variants */
+.opacity iframe{opacity:0}
+.vishidden iframe{visibility:hidden}
+.pe iframe{pointer-events:none}
+.transform iframe{inset:auto;left:50%;top:50%;translate:-50% -50%;scale:1.2}
+.tiny iframe{width:1px;height:1px}
+.off iframe{left:-9999px;width:100%}
+.feedcss #box{pointer-events:none}
+.feedcss iframe{pointer-events:none;inset:auto;left:50%;top:50%;width:max(100cqw,100cqh*16/9);height:max(100cqh,100cqw*9/16);translate:-50% -50%;scale:1.2;opacity:0;transition:opacity .5s,scale .6s ease-out}
+.feedcss.play iframe{opacity:1}
+.dnone iframe{display:none}
+</style></head>
+<body>
+<div id="box"></div>
+<pre id="log"></pre>
+<script>
+const Q = new URLSearchParams(location.search), V = (Q.get('v') || 'static').split(','), KEY = Q.get('k') || 'JHO3tiBD3cs', TK = Q.get('tk') || '7685112567647210772';
+const T0 = performance.now(), R = window.__r = [], L = document.getElementById('log'), box = document.getElementById('box');
+const has = n => V.includes(n), tk = has('tk');
+function log(...p) { const s = '+' + ((performance.now() - T0) / 1000).toFixed(2) + ' ' + p.join(' '); R.push(s); L.textContent += s + '\n'; L.scrollTop = 1e9; }
+V.forEach(v => document.body.classList.add(v));
+const auto = has('cmd') ? 0 : 1;
+const ORIGIN = has('noorigin') ? '' : '&origin=' + encodeURIComponent(location.origin);
+const SRC = tk ? 'https://www.tiktok.com/player/v1/' + TK + '?autoplay=' + auto + '&muted=1&loop=1&controls=0&progress_bar=0&play_button=0&volume_control=0&fullscreen_button=0&timestamp=0&description=0&music_info=0&rel=0&native_context_menu=0&closed_caption=0'
+  : 'https://www.youtube-nocookie.com/embed/' + KEY + '?autoplay=' + auto + (has('noplaysinline') ? '' : '&playsinline=1') + '&rel=0&modestbranding=1&iv_load_policy=3&mute=1&controls=0&disablekb=1&fs=0&enablejsapi=1' + ORIGIN;
+let el, rdy = 0, st = null, done = 0;
+const cmd = (func, args = []) => { if (!el || !el.contentWindow) return; log('cmd', func); el.contentWindow.postMessage(tk ? { type: { playVideo: 'play', pauseVideo: 'pause', mute: 'mute', unMute: 'unMute' }[func], 'x-tiktok-player': true } : JSON.stringify({ event: 'command', func, args }), '*'); };
+addEventListener('message', e => {
+  if (!/youtube|tiktok/.test(e.origin)) return;
+  let d = e.data; try { if (typeof d === 'string') d = JSON.parse(d); } catch (x) { return; }
+  if (!d) return;
+  const inf = d.event === 'infoDelivery' && d.info || {};
+  const s = tk ? (d.type === 'onStateChange' ? d.value : null) : d.event === 'onStateChange' ? d.info : inf.playerState;
+  const ev = d.event || d.type;
+  if (ev !== 'infoDelivery' && ev !== 'onCurrentTime') log('msg', ev, typeof d.info === 'object' ? '' : (d.info ?? d.value ?? ''));
+  else if (inf.playerState != null || inf.muted != null) log('msg info state=' + inf.playerState + ' muted=' + inf.muted);
+  if (!rdy) { rdy = 1; log('READY'); if (has('cmd')) setTimeout(() => cmd('playVideo'), 50); if (has('unmute')) { cmd('unMute'); } }
+  if (s != null && s !== st) { st = s; log('STATE', s); if (s === 1 && !done) { done = 1; log('PLAYING at', ((performance.now() - T0) / 1000).toFixed(2)); document.body.classList.add('play'); window.__done = (performance.now() - T0) / 1000; } }
+});
+function make() {
+  el = document.createElement('iframe');
+  if (!has('noallow')) el.allow = 'autoplay; encrypted-media';
+  el.title = 'Trailer'; el.src = SRC; box.append(el);
+  el.addEventListener('load', () => { log('load'); if (!tk) { let n = 0; const li = setInterval(() => { if (rdy || ++n > 40) clearInterval(li); else el.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*'); }, 500); el.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*'); } });
+  log('mk', V.join(','), 'auto=' + auto, tk ? 'tiktok' : KEY);
+}
+log('start', navigator.userAgent.slice(-40), innerWidth + 'x' + innerHeight, 'vis=' + document.visibilityState, 'ua-act=' + !!(navigator.userActivation && navigator.userActivation.isActive));
+if (has('static')) document.write('<iframe id="st" allow="autoplay; encrypted-media" title="Trailer" src="' + SRC + '"></iframe>'), (el = document.getElementById('st'), box.append(el), log('static iframe'), el.addEventListener('load', () => { log('load'); let n = 0; const li = setInterval(() => { if (rdy || ++n > 40) clearInterval(li); else el.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*'); }, 500); el.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*'); }));
+else if (has('js0')) make();
+else if (has('late')) setTimeout(make, 3000);
+else addEventListener('load', make);
+if (has('reveal')) setTimeout(() => { document.body.classList.remove('opacity', 'vishidden', 'dnone'); log('revealed'); }, +Q.get('at') || 6000);
+setTimeout(() => { log('END st=' + st + ' done=' + !!done); window.__end = 1; }, 15000);
+</script>
+</body></html>
