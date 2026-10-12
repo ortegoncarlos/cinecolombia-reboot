@@ -43,7 +43,7 @@ The demo can record sessions with [Smartlook](https://www.smartlook.com/) for th
 
 ## Pruebas
 
-`npm i && npm test` corre `tests/feed-sound.mjs`: 11 casos del flujo de sonido del feed (preferencia guardada, primer gesto, remute de iOS, TikTok, pestaña oculta, escritorio) con mensajes sintéticos de los reproductores en Chrome (emulación iPhone 13), sin red. Necesita Google Chrome instalado; el sitio en sí sigue sin dependencias.
+`npm i && npm test` corre `tests/feed-sound.mjs`: 19 casos del orquestador de tráilers del feed (arranque de la primera tarjeta, precarga y activación de la siguiente, control ▶ a los 10 s, reintento de un player mudo, preferencia de sonido y activación del navegador, Sonido, remute de iOS, TikTok, pestaña oculta, escritorio) con mensajes sintéticos de los reproductores en Chrome (emulación iPhone 13), sin red. `ONLY=16 npm test` corre un caso. El diseño y las mediciones en el iPhone están en `docs/auditoria-player.md`. Necesita Google Chrome instalado; el sitio en sí sigue sin dependencias.
 
 ## Publicar
 
