@@ -126,8 +126,9 @@
 
        <template x-if="ready && !none">
         <div class="sch-b">
+         <div class="pvk" x-show="pv"><p class="sec">Preventa · semana de estreno</p><p class="kicker">Compra anticipada para la semana de estreno. Eliges tus sillas ahora.</p></div>
          <div class="dates" role="tablist" aria-label="Día">
-          <template x-for="(d, i) in WEEK" :key="d">
+          <template x-for="(d, i) in W" :key="d">
            <button class="date" role="tab" :id="'d' + i" aria-controls="sched" :class="{ none: days[i] && !has(i), unk: !days[i] }" :aria-selected="(sel === i) + ''" :tabindex="sel === i ? 0 : -1" @click="pick(i)" @keydown="nav($event, i)"
             :aria-label="fmtDate(d).label + ' ' + fmtDate(d).day + (days[i] && !has(i) ? ', sin funciones' : '')"><small x-text="fmtDate(d).label"></small><b x-text="fmtDate(d).day"></b></button>
           </template>
@@ -239,7 +240,7 @@ function pel() {
   LANG, PR: null, lbi: -1, VT: { Trailer: 'Trailer', Teaser: 'Avance', Clip: 'Clip', Featurette: 'Detrás de cámaras', 'Behind the Scenes': 'Detrás de cámaras' },
   film: null, missing: false, more: false, long: false, stuck: false,
   vid: !NOAUTO, shown: false, snd: false, tkFail: false,
-  days: WEEK.map(() => null), sel: 0, ready: false, f: [], now: false, all: false, t: hm(),
+  W: WEEK, pv: false, days: WEEK.map(() => null), sel: 0, ready: false, f: [], now: false, all: false, t: hm(),
 
   async init() {
    const id = getQueryParam('id');
@@ -255,6 +256,7 @@ function pel() {
    ['pointerdown', 'keydown'].forEach(k => addEventListener(k, () => ls.get('cineco.sound') === '1' && !this.snd && this.toggleSound(), { once: true }));
    loadJSON('data/seats/prices.json').then(p => { this.PR = p; });
    if (f.status === 'pronto') return;
+   if (relWeek(f)) { this.W = relWeek(f); this.pv = true; }
    this.$watch('$store.city.slug', c => this.load(c));
    this.load(this.$store.city.slug);
    setInterval(() => { this.t = hm(); }, 60000);
@@ -301,28 +303,28 @@ function pel() {
    let i = 0;
    for (; i < 7; i++) { await this.day(i, c, r); if (r !== run) return; if (this.ahead(i)) break; }
    this.pick(i < 7 ? i : 0); this.ready = true;
-   WEEK.forEach((x, k) => this.days[k] || this.day(k, c, r));
+   this.W.forEach((x, k) => this.days[k] || this.day(k, c, r));
   },
   async day(i, c, r) {
-   const d = await loadDay(c, i); // same guard as the other pages: no request past the snapshot
-   if (r === run) this.days[i] = d[this.film.id] || {};
+   const id = this.film.id, d = this.pv ? { [id]: (await loadPv(id, c))[this.W[i]] } : await loadDay(c, i); // same guard as the other pages: no request past the snapshot
+   if (r === run) this.days[i] = d[id] || {};
   },
   has(i) { return Object.keys(this.days[i] || {}).length > 0; },
-  ahead(i) { return Object.values(this.days[i] || {}).some(l => l.some(s => !(WEEK[i] === TODAY && s.time < this.t))); },
-  pick(i) { this.sel = i; this.f = []; this.all = false; this.now = WEEK[i] === TODAY; },
+  ahead(i) { return Object.values(this.days[i] || {}).some(l => l.some(s => !(this.W[i] === TODAY && s.time < this.t))); },
+  pick(i) { this.sel = i; this.f = []; this.all = false; this.now = this.W[i] === TODAY; },
   nav(e, i) {
    const n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: 6 }[e.key];
    if (n == null || n < 0 || n > 6) return;
    e.preventDefault(); this.pick(n); this.$nextTick(() => document.getElementById('d' + n).focus());
   },
-  onDay(i) { return i === 0 ? 'hoy' : i === 1 ? 'mañana' : 'el ' + this.dl(i); }, // "No hay funciones mañana" / "el mar 14"
-  dl(i) { if (i < 0) return ''; const d = fmtDate(WEEK[i]); return d.label.toLowerCase() + ' ' + d.day; },
+  onDay(i) { return { Hoy: 'hoy', Mañana: 'mañana' }[fmtDate(this.W[i]).label] || 'el ' + this.dl(i); }, // "No hay funciones mañana" / "el mar 14"
+  dl(i) { if (i < 0) return ''; const d = fmtDate(this.W[i]); return d.label.toLowerCase() + ' ' + d.day; },
   get cn() { return (this.$store.city.cur || {}).name || ''; },
   get none() { return this.ready && this.days.every(d => d && !Object.keys(d).length); },
-  get alt() { const a = WEEK.map((x, k) => (this.ahead(k) ? k : -1)).filter(k => k >= 0 && k !== this.sel); return a.find(k => k > this.sel) ?? a.pop() ?? -1; },
-  past(s) { return WEEK[this.sel] === TODAY && s.time < this.t; },
+  get alt() { const a = this.W.map((x, k) => (this.ahead(k) ? k : -1)).filter(k => k >= 0 && k !== this.sel); return a.find(k => k > this.sel) ?? a.pop() ?? -1; },
+  past(s) { return this.W[this.sel] === TODAY && s.time < this.t; },
   get raw() { return Object.values(this.days[this.sel] || {}).flat(); },
-  get isToday() { return WEEK[this.sel] === TODAY; },
+  get isToday() { return this.W[this.sel] === TODAY; },
   // 3 soonest on sale that day (today: still ahead)
   get next() {
     const c = this.$store.city.cur, day = this.days[this.sel] || {};

@@ -70,8 +70,15 @@ function boleta() {
         if (this.paid) return void (location.href = 'pelicula.html?id=' + this.film.id);
         this.step = (e.state && e.state.step) || 'seats'; this.focusTop();
       });
-      const site = id.split('-')[0], cities = await loadJSON('data/cities.json');
-      const city = (Array.isArray(cities) ? cities : []).find(c => c.sites.some(s => s.id === site));
+      const cities = await loadJSON('data/cities.json'), list = Array.isArray(cities) ? cities : [];
+      let site = id.split('-')[0], city = list.find(c => c.sites.some(s => s.id === site));
+      if (site === 'pv') { // simulated preventa release week (pv-{film}-{n}): stored city first, then the rest
+        const f = id.split('-')[1], cs = [...list].sort((a, b) => (b.slug === this.$store.city.slug) - (a.slug === this.$store.city.slug));
+        for (const c of cs) {
+          const days = await loadPv(f, c.slug);
+          if (Object.entries(days).some(([d, ss]) => Object.entries(ss).some(([k, l]) => { const t = l.find(x => x.id === id); return t && (this.t = t, this.date = d, this.filmId = f, site = k); }))) { city = c; break; }
+        }
+      }
       if (city) {
         // day by day until the show turns up (usually today or tomorrow: 1-2 files instead of 7)
         for (let i = 0; i < 7 && !this.t; i++) {

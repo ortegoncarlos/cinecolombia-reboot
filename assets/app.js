@@ -84,6 +84,9 @@ const mapsUrl = s => (/Mac|iPhone|iPad/.test(navigator.platform || navigator.use
 // ponytail: snapshot ends 2026-10-17 (see README); later days read as empty without a 404. Update with the data.
 const LAST_DAY = '2026-10-17';
 const loadDay = (city, i) => WEEK[i] > LAST_DAY ? Promise.resolve({}) : loadJSON('data/showtimes/' + city + '/' + WEEK[i] + '.json');
+// Preventa released after the snapshot: its release week instead of this week, simulated in data/showtimes/preventa/{film}/{city}.json ({from, days: {iso: {siteId: [showings]}}}).
+const relWeek = f => f.status === 'preventa' && f.releaseDate > LAST_DAY ? WEEK.map((x, k) => new Date(utc(f.releaseDate).getTime() + k * 864e5).toISOString().slice(0, 10)) : null;
+const loadPv = (film, city) => loadJSON('data/showtimes/preventa/' + film + '/' + city + '.json').then(d => d.days || {});
 // New day in Bogotá: TODAY/WEEK are stale.
 if (!DEMO_NOW) document.addEventListener('visibilitychange', () => document.hidden || isoDateInBogota() === TODAY || location.reload());
 
@@ -105,6 +108,14 @@ function toast(msg, action, ms = 2200) {
   t.classList.add('on');
   clearTimeout(toast.t); toast.t = setTimeout(toastOff, ms);
 }
+// Session recording for the demo (Smartlook). Empty key: nothing loads. The IP-level city and coordinates from
+// guessCity() are attached to the session as properties and as a 'geo' event; the exact GPS position is never sent.
+const SMARTLOOK_KEY = '28bd4201d0b84cafe2223460d29a285989bfff3a', SMARTLOOK_REGION = 'eu';
+if (SMARTLOOK_KEY) {
+  window.smartlook || (function (d) { const o = window.smartlook = function () { o.api.push(arguments); }, c = d.createElement('script'); o.api = []; c.async = true; c.src = 'https://web-sdk.smartlook.com/recorder.js'; d.head.appendChild(c); })(document);
+  smartlook('init', SMARTLOOK_KEY, { region: SMARTLOOK_REGION });
+}
+const geoLog = (slug, me) => { if (!window.smartlook) return; const p = { city: slug, lat: me.lat, lng: me.lng, geo: 'ip', ua: navigator.userAgent }; smartlook('properties', p); smartlook('track', 'geo', p); };
 // Nearest city to the visitor's IP location (kept to sort multiplex); Bogotá when the lookup fails, takes > 3 s, or nothing is within 150 km.
 async function guessCity(list) {
   try {
@@ -114,6 +125,7 @@ async function guessCity(list) {
     Alpine.store('geo').set(me);
     let best = null, bestKm = Infinity;
     list.forEach(c => c.sites.forEach(s => { const k = haversineKm(me, s); if (k < bestKm) { bestKm = k; best = c; } }));
+    geoLog(best && bestKm <= 150 ? best.slug : 'bogota', me);
     if (best && bestKm <= 150) return best.slug;
   } catch (e) { /* offline, blocked or slow: fall back */ }
   return 'bogota';

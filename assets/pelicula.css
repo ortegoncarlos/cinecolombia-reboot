@@ -202,3 +202,4 @@
   .mx-n:hover h3{color:var(--fg);text-decoration:underline 2px var(--accent);text-underline-offset:4px}
   .st[href]:hover{transform:translateY(-2px)}
 }
+.pvk .kicker{margin-top:4px}

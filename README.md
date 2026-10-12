@@ -21,6 +21,8 @@ The film, cinema and showtime data is a one-time snapshot of Cine Colombia's pub
 
 The demo clock is frozen at 11 October 2026 22:00 (Bogotá) to match the snapshot; set `DEMO_NOW` in `assets/app.js` to `null` for live time.
 
+Preventa films that open after 17 October have no real showtimes yet, so their release week (release date + 6 days) is simulated from this week's schedule: one file per film and city under `data/showtimes/preventa/`, cloned from each city's busiest cartelera film (same multiplex, times and rooms, so seat maps work), with show ids `pv-{filmId}-{n}`. Opera, theatre and concerts get only a few special screenings.
+
 The Confitería step of the ticket flow reads `data/food.json`, a sample menu (combos, crispetas, bebidas, snacks) with illustrative prices, not Cine Colombia's real menu or prices.
 
 ## Promos
@@ -30,6 +32,8 @@ Promo cards in the Cartelera feed (currently one TikTok video) come from `data/p
 ## Privacidad
 
 On the first visit the browser asks get.geojs.io for an approximate location based on the IP address, only to pick the nearest city and sort multiplexes by distance; nothing else is sent anywhere, and the city, location and sound choices are stored locally in the browser (localStorage).
+
+The demo can record sessions with [Smartlook](https://www.smartlook.com/) for the product team's review: set `SMARTLOOK_KEY` (and the project region) in `assets/app.js`. When enabled, the approximate IP-based city and coordinates are attached to the session; the exact GPS position used to sort multiplexes is never sent.
 
 ## Créditos
 
