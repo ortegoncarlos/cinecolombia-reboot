@@ -101,12 +101,16 @@ h1,h2,h3,p{margin:0}
 @keyframes kb{to{transform:scale(1.08)}}
 .fb-bg{filter:blur(24px) brightness(.6);transform:scale(1.2)}
 .media .fb-poster{position:absolute;inset:auto;left:50%;top:54%;translate:-50% -50%;height:min(64%,calc(52cqw*1.5));width:auto;aspect-ratio:2/3;border-radius:var(--r-m);box-shadow:0 0 0 1px var(--line),0 16px 40px rgba(0,0,0,.5)}
-.media .yt{--c:60px;--H:max(100cqh + var(--c),100cqw*9/16);border:0;pointer-events:none;inset:auto;left:50%;top:calc(50% - max(0px,var(--c) - (var(--H) - 100cqh)/2));width:max(100cqw,var(--H)*16/9);height:var(--H);translate:-50% -50%;opacity:0;transition:opacity .5s,scale .6s ease-out} /* cover + --c of YouTube title bar cropped at the top only, no extra zoom */
+.media .yt{border:0;pointer-events:none;inset:auto;left:50%;top:50%;width:max(100cqw,100cqh*16/9);height:max(100cqh,100cqw*9/16);translate:-50% -50%;scale:1.2;opacity:0;transition:opacity .5s,scale .6s ease-out}
 /* vertical (TikTok) media: fills the card from the header to the tab bar, info over a taller fade */
 .card.vert{justify-content:flex-end}
 .card.vert .media{position:absolute;inset:var(--top-h) 0 var(--tabbar)}
 .card.vert .media::after{height:55%}
-.media .tk{--h:calc(100cqh + var(--tt-chrome));--H:max(var(--h),100cqw*16/9);top:calc(50% - max(0px,var(--tt-chrome) - (var(--H) - 100cqh)/2));width:max(100cqw,var(--h)*9/16);height:var(--H);scale:1.02} /* 9:16 cover, shifted up only as far as the chrome is not already cropped; settles to 1 on reveal */
+.media .tk{--h:calc(100cqh + var(--tt-chrome));top:calc(50% - var(--tt-chrome)/2);width:max(100cqw,var(--h)*9/16);height:max(var(--h),100cqw*16/9);scale:1.02} /* 9:16 cover, top edge at -chrome; settles to 1 on reveal */
+@media (max-width:1023px){ /* phones: size by height (80 top / 40 bottom crop), no width cover; blurred backdrop fills any side bars */
+  .media .tk{top:calc(50% - (var(--tt-chrome) - 40px)/2);height:calc(100cqh + var(--tt-chrome) + 40px);width:calc((100cqh + var(--tt-chrome) + 40px)*9/16)}
+  .card.vert.play .bd{filter:blur(24px) brightness(.7);scale:1.25}
+}
 .tk-mark{width:56px;height:56px;margin:auto;opacity:.5}
 .btn.sec2{background:var(--chip);border:1px solid var(--line)}
 .card:not(.on) .tk{visibility:hidden}
@@ -115,7 +119,7 @@ h1,h2,h3,p{margin:0}
 /* fullscreen trailer: letterboxed, the player takes taps (pause/seek) around our buttons */
 .card .media.is-fs{position:fixed;inset:0;z-index:30;background:#000}
 .is-fs::before,.is-fs::after,.is-fs>:not(.yt,.fsc){display:none}
-.is-fs .yt{top:50%;width:min(100cqw,100cqh*16/9);height:min(100cqh,100cqw*9/16);scale:1;pointer-events:auto}
+.is-fs .yt{width:min(100cqw,100cqh*16/9);height:min(100cqh,100cqw*9/16);scale:1;pointer-events:auto}
 .is-fs .tk{top:50%;width:min(100cqw,100cqh*9/16);height:min(100cqh,100cqw*16/9)}
 body:has(.is-fs) :is(.top,.tabbar){display:none}
 .fsc button{pointer-events:auto}
