@@ -6,7 +6,7 @@
   --r-s:7px; --r-m:14px; --r-l:24px;
   --tabbar:calc(60px + env(safe-area-inset-bottom));
   --top-h:calc(102px + env(safe-area-inset-top)); /* feed header: 10 pad + 44 bar + 4 gap + 44 tabs */
-  --tt-chrome:80px; /* TikTok player's top chrome (avatar, name, logo), pushed above the media box */
+  --tt-chrome:80px; /* TikTok player's top chrome (avatar, name, logo), pushed above the media box (pelicula.html) */
   --font:"Roboto",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
   color-scheme:dark;
 }
@@ -89,49 +89,36 @@ h1,h2,h3,p{margin:0}
 .feed{height:100vh;height:100svh;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior-y:contain;scrollbar-width:none;max-width:480px;margin:auto}
 .feed::-webkit-scrollbar{display:none}
 /* film card: media box on top (sized by what the info panel leaves) + black panel below */
-.card{position:relative;height:100vh;height:100svh;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden;background:#000;isolation:isolate;display:flex;flex-direction:column;padding-top:var(--top-h)}
-.media{position:relative;flex:1 1 0;min-height:0;overflow:hidden;container-type:size;background:var(--navy-deep)}
+.card{position:relative;height:100vh;height:100svh;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;padding-top:var(--top-h)}
+.media{position:relative;flex:1 1 0;min-height:0;overflow:hidden;container-type:size} /* no background: the clip behind shows through once the card plays */
+/* the two native players: first children of the feed scroller, placed over a card's media box (feed().place), painted under the cards */
+.feed{position:relative}
+.clip{position:absolute;object-fit:cover;object-position:50% 40%;background:#000;opacity:0;transition:opacity .4s;pointer-events:none}
+.clip.on{opacity:1}
+.clip.vert{object-position:50% 15%}
+/* pelicula.html trailer embed (YouTube or TikTok iframe) inside its media box: cover, revealed by .dcard.on */
+.media .yt{border:0;pointer-events:none;inset:auto;left:50%;top:50%;width:max(100cqw,100cqh*16/9);height:max(100cqh,100cqw*9/16);translate:-50% -50%;scale:1.2;opacity:0;transition:opacity .5s,scale .6s ease-out}
+.media .tk{--h:calc(100cqh + var(--tt-chrome));top:calc(50% - var(--tt-chrome)/2);width:max(100cqw,var(--h)*9/16);height:max(var(--h),100cqw*16/9);scale:1.02}
+.card.play .media img{visibility:hidden} /* reveal the clip behind */
 .media>*,.scrim{position:absolute;inset:0}
 .media::before,.media::after{content:"";position:absolute;z-index:1;left:0;right:0;top:0;height:80px;background:linear-gradient(#000,rgba(0,0,0,.5) 45%,rgba(0,0,0,0))}
 .media::after{top:auto;bottom:0;height:140px;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.55) 45%,#000)}
 .media{pointer-events:none} /* taps never reach the YouTube player (own prev/pause/next overlay); .scrim above stays hit-testable as a shield */
 .media img{width:100%;height:100%;object-fit:cover}
 .bd{object-position:50% 40%}
+.bd.pf{object-position:50% 20%} /* poster used as hero: keep the face */
 .card.on .bd{animation:kb 18s ease-out forwards}
 @keyframes kb{to{transform:scale(1.08)}}
 .fb-bg{filter:blur(24px) brightness(.6);transform:scale(1.2)}
 .media .fb-poster{position:absolute;inset:auto;left:50%;top:54%;translate:-50% -50%;height:min(64%,calc(52cqw*1.5));width:auto;aspect-ratio:2/3;border-radius:var(--r-m);box-shadow:0 0 0 1px var(--line),0 16px 40px rgba(0,0,0,.5)}
-.media .yt{border:0;pointer-events:none;inset:auto;left:50%;top:50%;width:max(100cqw,100cqh*16/9);height:max(100cqh,100cqw*9/16);translate:-50% -50%;scale:1.2;opacity:0;transition:opacity .5s,scale .6s ease-out}
-/* vertical (TikTok) media: fills the card from the header to the tab bar, info over a taller fade */
 .card.vert{justify-content:flex-end}
 .card.vert .media{position:absolute;inset:var(--top-h) 0 var(--tabbar)}
 .card.vert .media::after{height:55%}
-.media .tk{--h:calc(100cqh + var(--tt-chrome));top:calc(50% - var(--tt-chrome)/2);width:max(100cqw,var(--h)*9/16);height:max(var(--h),100cqw*16/9);scale:1.02} /* 9:16 cover, top edge at -chrome; settles to 1 on reveal */
-@media (max-width:1023px){ /* phones: full-width cover anchored at the top (chrome hidden, 80 px crop), overflow at the bottom */
-  .media .tk{top:calc(-1*var(--tt-chrome));translate:-50% 0;height:max(100cqw*16/9,100cqh + var(--tt-chrome));width:max(100cqw,(100cqh + var(--tt-chrome))*9/16)}
-}
-.tk-mark{width:56px;height:56px;margin:auto;opacity:.5}
 .btn.sec2{background:var(--chip);border:1px solid var(--line)}
-.card:not(.on) .tk{visibility:hidden}
-.card.play .tk{scale:1}
-.card.play .yt{opacity:1} /* shown once playing (no fixed delay): hides the loading frame and the preload */
-/* fullscreen trailer: letterboxed, the player takes taps (pause/seek) around our buttons */
-.card .media.is-fs{position:fixed;inset:0;z-index:30;background:#000}
-.is-fs::before,.is-fs::after,.is-fs>:not(.yt,.fsc){display:none}
-.is-fs .yt{width:min(100cqw,100cqh*16/9);height:min(100cqh,100cqw*9/16);scale:1;pointer-events:auto}
-.is-fs .tk{top:50%;translate:-50% -50%;width:min(100cqw,100cqh*9/16);height:min(100cqh,100cqw*16/9)}
-body:has(.is-fs) :is(.top,.tabbar){display:none}
-.fsc button{pointer-events:auto}
-/* autoplay blocked: big play control; the player shows its own poster/button and takes taps (scrim shield off) */
+/* playback refused even muted (Low Power Mode): big play control */
 .media .big{inset:auto;left:50%;top:50%;translate:-50% -50%;z-index:2;width:64px;height:64px;pointer-events:auto}
 .media .big svg{width:30px;height:30px;fill:#fff;stroke:none;margin-left:3px}
-.card.wait .yt{opacity:1;pointer-events:auto}
 .card.wait .scrim{pointer-events:none}
-/* vertical cards: a frosted strip behind the rail blurs TikTok's own like/comment/share icons instead of cropping the video */
-.card.vert .rail::before{content:"";position:absolute;z-index:-1;inset:-36px -10px -48px;border-radius:28px;background:rgba(0,0,0,.22);-webkit-backdrop-filter:blur(18px) saturate(.9);backdrop-filter:blur(18px) saturate(.9)}
-.fsc{z-index:2;display:flex;align-items:flex-end;gap:12px;padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
-.fsc .x{position:absolute;top:calc(12px + env(safe-area-inset-top));right:12px}
-.fsc::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:#fff;transform-origin:left;transform:scaleX(var(--t,0));transition:transform .3s linear}
 .info{position:relative;z-index:2;margin:-42px 76px 0 16px;padding-bottom:calc(var(--tabbar) + 44px);display:flex;flex-direction:column;gap:10px}
 .chiprow{display:flex;align-items:center;gap:10px}
 .chiprow>div{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
@@ -253,7 +240,6 @@ body:has(.is-fs) :is(.top,.tabbar){display:none}
   .dnav [aria-current]::after{content:"";position:absolute;left:14px;right:14px;bottom:-10px;height:3px;border-radius:2px;background:var(--accent)}
   .dbar .pill{gap:8px;background:none}
   .dbar .pill svg:first-child{color:var(--fg-3)}
-  body:has(.is-fs) .dbar{display:none}
   /* city sheet → centred dialog */
   .sheet{top:50%;bottom:auto;translate:0 -50%;max-height:min(80vh,640px);border-radius:var(--r-l);padding:20px 24px 24px;transition:translate .28s cubic-bezier(.2,.8,.2,1),opacity .2s}
   @starting-style{.sheet{translate:0 -46%;opacity:0}}
@@ -281,8 +267,6 @@ body:has(.is-fs) :is(.top,.tabbar){display:none}
   .feed .meta{font-size:15px}
   .feed .info .btn{grid-column:3;grid-row:1/span 6;width:auto;margin:0;padding:0 24px}
   .feed .rail{position:static;grid-column:2;align-self:center;flex-direction:row;gap:12px}
-  .feed .card.vert .rail::before{display:none}
-  /* vertical (TikTok) media: 9:16 stage, info to its left */
   .feed .card.vert{width:auto;height:100%;align-self:stretch;align-content:stretch;grid-template-columns:380px auto;grid-template-rows:minmax(0,1fr) auto;column-gap:40px}
   .feed .card.vert .media{position:relative;inset:auto;grid-column:2;grid-row:1/span 2;width:auto;height:100%;aspect-ratio:9/16}
   .feed .card.vert .scrim{grid-area:1/2/3/3}

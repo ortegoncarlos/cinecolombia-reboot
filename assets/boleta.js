@@ -151,7 +151,7 @@ function boleta() {
 <linearGradient id="cone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".09"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
 <path class="cone" d="M${sx} 22Q${VW / 2} 8 ${ex} 22L${VW - 4} ${fy}H4z" fill="url(#cone)"/>
 <path class="floor" d="M4 ${TOP - 14}H${VW - 4}V${fy}H4zM4 ${fy}l6 6H${VW + 2}l-6 -6M${VW - 4} ${TOP - 14}l6 6V${fy + 6}"/>
-<path class="screen" d="M${sx} 22Q${VW / 2} 8 ${ex} 22"/><text class="scr" x="${VW / 2}" y="38">PANTALLA</text>
+<path class="glow" d="M${sx} 22Q${VW / 2} 8 ${ex} 22"/><path class="glow g2" d="M${sx} 22Q${VW / 2} 8 ${ex} 22"/><path class="screen" d="M${sx} 22Q${VW / 2} 8 ${ex} 22"/><text class="scr" x="${VW / 2}" y="38">PANTALLA</text>
 <path class="tier" d="${tiers}"/><g class="rl">${labels}</g><g class="seats">${seats}</g><g class="tags"></g></svg><div class="hits" role="group" aria-label="Sillas">${hits}</div>`;
       svg = el.firstChild; lit = svg.querySelector('#lit');
       el.querySelectorAll('.hits button').forEach(b => { const s = S.get(b.dataset.id); s.btn = b; s.el = svg.querySelector(`[data-id="${s.id}"]`); });

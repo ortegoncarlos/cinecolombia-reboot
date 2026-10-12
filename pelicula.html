@@ -45,7 +45,7 @@
     <section class="dcard" :class="{ on: shown }" aria-label="Película">
      <div class="media" :class="{ vert: !!tok }">
       <div class="mv">
-       <template x-if="heroImg(film)"><img class="bd" fetchpriority="high" decoding="async" width="1280" height="720" :src="imgSize(heroImg(film), BD)" alt=""></template>
+       <template x-if="heroImg(film)"><img class="bd" :class="film.hero === film.poster && 'pf'" fetchpriority="high" decoding="async" width="1280" height="720" :src="imgSize(heroImg(film), BD)" alt=""></template>
        <template x-if="!heroImg(film)"><div><img class="fb-bg" decoding="async" :src="imgSize(film.poster, 'w185')" alt=""><img class="fb-poster" fetchpriority="high" decoding="async" width="500" height="750" :src="imgSize(film.poster, 'w500')" alt=""></div></template>
        <template x-for="u in vid ? [src] : []" :key="u">
         <iframe class="yt" :class="{ tk: !!tok }" :src="u" x-init="mk($el)" @load="ytLoad($el)" title="Trailer" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true"></iframe>

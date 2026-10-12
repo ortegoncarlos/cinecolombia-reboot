@@ -45,7 +45,8 @@
    "hidden": false,
    "feedOrder": null,
    "gallery": [],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000786.mp4"
   },
   {
    "id": "HO00000724",
@@ -138,7 +139,8 @@
      "lang": "en"
     }
    ],
-   "hero": "https://image.tmdb.org/t/p/w1280/fqK74DYEkAuvMJXozxiqSujCQU4.jpg"
+   "hero": "https://image.tmdb.org/t/p/w780/8CXwxpyvQiz9COMLZov4Oae8NKb.jpg",
+   "clip": "media/trailers/HO00000724.mp4"
   },
   {
    "id": "HO00000703",
@@ -208,7 +210,8 @@
      "type": "Featurette",
      "lang": "es"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000703.mp4"
   },
   {
    "id": "HO00000783",
@@ -393,7 +396,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000633.mp4"
   },
   {
    "id": "HO00000630",
@@ -487,7 +491,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000630.mp4"
   },
   {
    "id": "HO00000698",
@@ -584,7 +589,9 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000698.mp4",
+   "vertical": true
   },
   {
    "id": "HO00000736",
@@ -676,7 +683,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000736.mp4"
   },
   {
    "id": "HO00000765",
@@ -775,7 +783,8 @@
      "type": "Trailer",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000765.mp4"
   },
   {
    "id": "HO00000738",
@@ -869,7 +878,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000738.mp4"
   },
   {
    "id": "HO00000669",
@@ -960,7 +970,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000669.mp4"
   },
   {
    "id": "HO00000747",
@@ -1053,7 +1064,8 @@
      "type": "Featurette",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000747.mp4"
   },
   {
    "id": "HO00000785",
@@ -1145,7 +1157,8 @@
      "type": "Clip",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000785.mp4"
   },
   {
    "id": "HO00000381",
@@ -1237,7 +1250,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000381.mp4"
   },
   {
    "id": "HO00000882",
@@ -1373,7 +1387,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000386.mp4"
   },
   {
    "id": "HO00000647",
@@ -1463,7 +1478,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000647.mp4"
   },
   {
    "id": "HO00000600",
@@ -1555,7 +1571,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000600.mp4"
   },
   {
    "id": "HO00000897",
@@ -1655,7 +1672,8 @@
     "https://image.tmdb.org/t/p/w780/4OtL1VCRInLVRB8pyICJg66kVQJ.jpg",
     "https://image.tmdb.org/t/p/w780/pH8tLBiZi2qbFKU3WWcJn8zP9y1.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000826.mp4"
   },
   {
    "id": "HO00000861",
@@ -1704,7 +1722,8 @@
     "https://image.tmdb.org/t/p/w780/kF2V0YyIMNKr5xmkTLfcftj4mLe.jpg",
     "https://image.tmdb.org/t/p/w780/3g6J84OLlPR0PpvMpbq1JMfNOb0.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000861.mp4"
   },
   {
    "id": "HO00000851",
@@ -1751,7 +1770,8 @@
    "gallery": [
     "https://image.tmdb.org/t/p/w780/bGCCy9lECIVYs95QIq3ZskVG2TF.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000851.mp4"
   },
   {
    "id": "HO00000856",
@@ -1850,7 +1870,8 @@
     "https://image.tmdb.org/t/p/w780/478179rbepSnjuDNXnuFqkC4kDQ.jpg",
     "https://image.tmdb.org/t/p/w780/osWMowLclCZ5mLKQuQikmMWbWbT.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000863.mp4"
   },
   {
    "id": "HO00000864",
@@ -1895,7 +1916,8 @@
    "hidden": false,
    "feedOrder": null,
    "gallery": [],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000864.mp4"
   },
   {
    "id": "HO00000830",
@@ -1945,7 +1967,8 @@
     "https://image.tmdb.org/t/p/w780/qBWl2bXbG7qySJ4fE8d2jjeepKY.jpg",
     "https://image.tmdb.org/t/p/w780/rKwbssuxBd0oeuc9TyW8v75Aaxb.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000830.mp4"
   },
   {
    "id": "HO00000865",
@@ -2013,7 +2036,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000865.mp4"
   },
   {
    "id": "HO00000834",
@@ -2079,7 +2103,8 @@
      "type": "Clip",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000834.mp4"
   },
   {
    "id": "HO00000835",
@@ -2145,7 +2170,8 @@
      "type": "Featurette",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000835.mp4"
   },
   {
    "id": "HO00000867",
@@ -2218,7 +2244,8 @@
      "type": "Featurette",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000867.mp4"
   },
   {
    "id": "HO00000868",
@@ -2313,7 +2340,8 @@
     "https://image.tmdb.org/t/p/w780/3SNEP2bFRFe631divHjhVzT2MRB.jpg",
     "https://image.tmdb.org/t/p/w780/aW6sLdxOlSnpyQTBqrjPx5sz9Bz.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000836.mp4"
   },
   {
    "id": "HO00000837",
@@ -2398,7 +2426,8 @@
      "type": "Featurette",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000837.mp4"
   },
   {
    "id": "HO00000870",
@@ -2443,7 +2472,9 @@
    "hidden": false,
    "feedOrder": null,
    "gallery": [],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000870.mp4",
+   "vertical": true
   },
   {
    "id": "HO00000840",
@@ -2528,7 +2559,8 @@
      "type": "Featurette",
      "lang": "es"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000840.mp4"
   },
   {
    "id": "HO00000871",
@@ -2602,7 +2634,8 @@
      "type": "Featurette",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000871.mp4"
   },
   {
    "id": "HO00000841",
@@ -2655,7 +2688,8 @@
      "type": "Featurette",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000841.mp4"
   },
   {
    "id": "HO00000842",
@@ -2756,7 +2790,8 @@
     "https://image.tmdb.org/t/p/w780/4kZfdomQknIN3BWXkbDRxumq8TT.jpg",
     "https://image.tmdb.org/t/p/w780/iEu9OJkiSsS4sFQDccUaZKU17jl.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000852.mp4"
   },
   {
    "id": "HO00000843",
@@ -2803,7 +2838,8 @@
     "https://image.tmdb.org/t/p/w780/sdg0d8fElsUtizd86xoNPVrE9Bl.jpg",
     "https://image.tmdb.org/t/p/w780/mu7EI78v9756qeffuZizbuvfYrp.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000843.mp4"
   },
   {
    "id": "HO00000844",
@@ -2946,7 +2982,8 @@
     "https://image.tmdb.org/t/p/w780/5zu82YaR8PhC7s16tETJXPo7oI9.jpg",
     "https://image.tmdb.org/t/p/w780/r2h2EJKQuWEOzYcvuP494gJYfon.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000845.mp4"
   },
   {
    "id": "HO00000847",
@@ -2998,7 +3035,8 @@
     "https://image.tmdb.org/t/p/w780/6ODcFSFslmolM7Zn2uC1zuYFRvO.jpg",
     "https://image.tmdb.org/t/p/w780/tUPKhMh47ZpHeo4g6bKJ8h67uuC.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000847.mp4"
   },
   {
    "id": "HO00000848",
@@ -3145,7 +3183,8 @@
      "type": "Trailer",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000850.mp4"
   },
   {
    "id": "HO00000853",
@@ -3189,7 +3228,8 @@
    "hidden": false,
    "feedOrder": null,
    "gallery": [],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000853.mp4"
   },
   {
    "id": "HO00000876",
@@ -3250,7 +3290,8 @@
      "type": "Clip",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000876.mp4"
   },
   {
    "id": "HO00000857",
@@ -3439,7 +3480,8 @@
      "type": "Teaser",
      "lang": "es"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000878.mp4"
   },
   {
    "id": "HO00000666",
@@ -3535,7 +3577,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000666.mp4"
   },
   {
    "id": "HO00000596",
@@ -3637,7 +3680,9 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000596.mp4",
+   "vertical": true
   },
   {
    "id": "HO00000881",
@@ -3730,7 +3775,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000881.mp4"
   },
   {
    "id": "HO00000795",
@@ -3943,7 +3989,8 @@
    "hidden": false,
    "feedOrder": null,
    "gallery": [],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000891.mp4"
   },
   {
    "id": "HO00000892",
@@ -4028,7 +4075,8 @@
    "hidden": false,
    "feedOrder": null,
    "gallery": [],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000779.mp4"
   },
   {
    "id": "HO00000791",
@@ -4122,7 +4170,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000791.mp4"
   },
   {
    "id": "HO00000792",
@@ -4216,7 +4265,8 @@
      "type": "Clip",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000792.mp4"
   },
   {
    "id": "HO00000793",
@@ -4404,7 +4454,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000794.mp4"
   },
   {
    "id": "HO00000729",
@@ -4493,7 +4544,8 @@
      "type": "Featurette",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000729.mp4"
   },
   {
    "id": "HO00000730",
@@ -4770,7 +4822,8 @@
     "https://image.tmdb.org/t/p/w780/smLCoIlouTlvjHerhFvKtMgfSDs.jpg",
     "https://image.tmdb.org/t/p/w780/vG38L80EPh5Eb5IyYAZpfG4vEec.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000758.mp4"
   },
   {
    "id": "HO00000759",
@@ -4826,7 +4879,8 @@
      "type": "Trailer",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000759.mp4"
   },
   {
    "id": "HO00000760",
@@ -5230,7 +5284,8 @@
    "hidden": false,
    "feedOrder": null,
    "gallery": [],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000790.mp4"
   },
   {
    "id": "HO00000789",
@@ -5291,7 +5346,8 @@
      "type": "Featurette",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000789.mp4"
   },
   {
    "id": "HO00000788",
@@ -5330,7 +5386,8 @@
    "hidden": false,
    "feedOrder": null,
    "gallery": [],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000788.mp4"
   },
   {
    "id": "HO00000787",
@@ -5369,7 +5426,8 @@
    "hidden": false,
    "feedOrder": null,
    "gallery": [],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000787.mp4"
   },
   {
    "id": "HO00000740",
@@ -5432,7 +5490,8 @@
      "type": "Clip",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000740.mp4"
   },
   {
    "id": "HO00000776",
@@ -5522,7 +5581,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000776.mp4"
   },
   {
    "id": "HO00000899",
@@ -5571,7 +5631,8 @@
     "https://image.tmdb.org/t/p/w780/478179rbepSnjuDNXnuFqkC4kDQ.jpg",
     "https://image.tmdb.org/t/p/w780/osWMowLclCZ5mLKQuQikmMWbWbT.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000899.mp4"
   },
   {
    "id": "HO00000895",
@@ -5622,7 +5683,8 @@
     "https://image.tmdb.org/t/p/w780/67xfSG3Jgdq0GaxImYFKm0nZyoA.jpg",
     "https://image.tmdb.org/t/p/w780/jRKdt5U7TZq6vmqQ9r9QAIBjRWp.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000895.mp4"
   },
   {
    "id": "HO00000825",
@@ -5712,7 +5774,8 @@
      "type": "Featurette",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000825.mp4"
   },
   {
    "id": "HO00000722",
@@ -5802,7 +5865,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000722.mp4"
   },
   {
    "id": "HO00000888",
@@ -5889,7 +5953,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000888.mp4"
   },
   {
    "id": "HO00000823",
@@ -5978,7 +6043,8 @@
      "type": "Featurette",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000823.mp4"
   },
   {
    "id": "HO00000623",
@@ -6067,7 +6133,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000623.mp4"
   },
   {
    "id": "HO00000752",
@@ -6130,7 +6197,8 @@
      "type": "Clip",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000752.mp4"
   },
   {
    "id": "HO00000775",
@@ -6182,7 +6250,8 @@
     "https://image.tmdb.org/t/p/w780/va9ai6DK6ffnPt9VUNrmzOUrqAI.jpg",
     "https://image.tmdb.org/t/p/w780/nZRybjELcjX7Lk5WvGkF7pYhsWh.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000775.mp4"
   },
   {
    "id": "HO00000896",
@@ -6242,7 +6311,8 @@
      "type": "Trailer",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000896.mp4"
   },
   {
    "id": "HO00000889",
@@ -6331,7 +6401,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000889.mp4"
   },
   {
    "id": "HO00000879",
@@ -6390,7 +6461,8 @@
      "type": "Trailer",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000879.mp4"
   },
   {
    "id": "HO00000885",
@@ -6524,7 +6596,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000772.mp4"
   },
   {
    "id": "HO00000822",
@@ -6584,7 +6657,8 @@
      "type": "Trailer",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000822.mp4"
   },
   {
    "id": "HO00000705",
@@ -6655,7 +6729,8 @@
      "type": "Featurette",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000705.mp4"
   },
   {
    "id": "HO00000884",
@@ -6754,7 +6829,8 @@
      "type": "Trailer",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000887.mp4"
   },
   {
    "id": "HO00000821",
@@ -6855,7 +6931,8 @@
     "https://image.tmdb.org/t/p/w780/k8EJBaM059lcAUli285LBixTLRj.jpg",
     "https://image.tmdb.org/t/p/w780/kij6uX3GWzIei6S3GTjGfIhXR3N.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000709.mp4"
   },
   {
    "id": "HO00000640",
@@ -6945,7 +7022,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000640.mp4"
   },
   {
    "id": "HO00000744",
@@ -7035,7 +7113,8 @@
      "type": "Featurette",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000744.mp4"
   },
   {
    "id": "HO00000883",
@@ -7140,7 +7219,8 @@
      "type": "Trailer",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000894.mp4"
   },
   {
    "id": "HO00000824",
@@ -7187,7 +7267,8 @@
     "https://image.tmdb.org/t/p/w780/mtkAdUOJfkI4edgom7OOKprSKLt.jpg",
     "https://image.tmdb.org/t/p/w780/8BKBxQmkvVLziACMdOBFL1lXMq.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000824.mp4"
   },
   {
    "id": "HO00000501",
@@ -7236,7 +7317,8 @@
     "https://image.tmdb.org/t/p/w780/eylp1R4jTWJK1sr8joIZuM3LBkU.jpg",
     "https://image.tmdb.org/t/p/w780/q2MLUyiYBtyY1e1KXzMcHVxpztG.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000501.mp4"
   },
   {
    "id": "HO00000886",
@@ -7364,7 +7446,8 @@
      "type": "Clip",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000754.mp4"
   },
   {
    "id": "HO00000480",
@@ -7454,7 +7537,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000480.mp4"
   },
   {
    "id": "HO00000607",
@@ -7524,7 +7608,8 @@
      "type": "Teaser",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000607.mp4"
   },
   {
    "id": "HO00000710",
@@ -7569,7 +7654,8 @@
     "https://image.tmdb.org/t/p/w780/wQhbZCikeDxMnuZhnwoa7a42OJs.jpg",
     "https://image.tmdb.org/t/p/w780/mI15JNCAcX15zgYjbWiK7uXR2oO.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000710.mp4"
   },
   {
    "id": "HO00000743",
@@ -7628,7 +7714,8 @@
      "type": "Trailer",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000743.mp4"
   },
   {
    "id": "HO00000704",
@@ -7700,7 +7787,8 @@
      "type": "Behind the Scenes",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000704.mp4"
   },
   {
    "id": "HO00000735",
@@ -7762,7 +7850,8 @@
      "type": "Trailer",
      "lang": "en"
     }
-   ]
+   ],
+   "clip": "media/trailers/HO00000735.mp4"
   },
   {
    "id": "HO00000750",
@@ -7814,7 +7903,8 @@
     "https://image.tmdb.org/t/p/w780/vt7jvXDEx1nEiuV0Oo0qoph9Hnq.jpg",
     "https://image.tmdb.org/t/p/w780/iHskIHsvgW37jSeH2T85CWdjOwh.jpg"
    ],
-   "videos": []
+   "videos": [],
+   "clip": "media/trailers/HO00000750.mp4"
   }
  ]
 }

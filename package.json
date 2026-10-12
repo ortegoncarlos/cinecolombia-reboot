@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "test": "node tests/feed-sound.mjs"
+    "test": "node tests/feed-player.mjs"
   },
   "devDependencies": {
     "playwright-core": "1.47.2"

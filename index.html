@@ -42,32 +42,26 @@
   </header>
 
   <main class="feed" x-ref="feed" aria-label="Películas" @scroll.passive="wake()">
+    <!-- the two players: first children of the scroll container, placed over a card's media box (place()) so they scroll with
+         it; one plays the active card, the other preloads the next clip; roles swap on activation -->
+    <video class="clip" x-ref="v0" :class="playing && vid().n === 0 && 'on'" playsinline muted loop preload="auto" tabindex="-1" aria-hidden="true"></video>
+    <video class="clip" x-ref="v1" :class="playing && vid().n === 1 && 'on'" playsinline muted loop preload="auto" tabindex="-1" aria-hidden="true"></video>
     <template x-for="(it, i) in queue.slice(0, n)" :key="gen + it.key">
-      <article class="card" :class="{ on: i === active, play: i === active && playing, wait: i === active && wait, plain: !it.f && !it.p, vert: !!tok(i) }" :data-i="i" x-init="obs($el)">
+      <article class="card" :class="{ on: i === active, play: i === active && playing, wait: i === active && wait, plain: !it.f && !it.p, vert: vert(i) }" :data-i="i" x-init="obs($el)">
 
         <template x-if="it.type === 'film'"><div style="display:contents">
-          <div class="media" :class="fs && i === active && 'is-fs'">
-            <!-- vertical (TikTok) media: the poster reads better than a landscape backdrop in the 9:16 box -->
-            <template x-if="heroImg(it.f) || tok(i)">
-              <img class="bd" :loading="i ? 'lazy' : 'eager'" :fetchpriority="i ? 'auto' : 'high'" decoding="async" width="1280" height="720" :src="tok(i) ? imgSize(it.f.poster, 'w780') : imgSize(heroImg(it.f), desk ? 'w780' : BD)" alt="">
+          <div class="media">
+            <!-- vertical clip: the poster reads better than a landscape backdrop in the 9:16 box -->
+            <template x-if="heroImg(it.f) || vert(i)">
+              <img class="bd" :class="it.f.hero === it.f.poster && 'pf'" :loading="i ? 'lazy' : 'eager'" :fetchpriority="i ? 'auto' : 'high'" decoding="async" width="1280" height="720" :src="vert(i) ? imgSize(it.f.poster, 'w780') : imgSize(heroImg(it.f), desk ? 'w780' : BD)" alt="">
             </template>
-            <template x-if="!heroImg(it.f) && !tok(i)">
+            <template x-if="!heroImg(it.f) && !vert(i)">
               <div>
                 <img class="fb-bg" :loading="i ? 'lazy' : 'eager'" decoding="async" :src="imgSize(it.f.poster, 'w185')" alt="">
                 <img class="fb-poster" :loading="i ? 'lazy' : 'eager'" :fetchpriority="i ? 'auto' : 'high'" decoding="async" width="500" height="750" :src="imgSize(it.f.poster, 'w500')" alt="">
               </div>
             </template>
-            <template x-for="k in (i === vid || i === pre) && key(i) ? [key(i)] : []" :key="k">
-              <iframe class="yt" x-init="mk($el, i)" @load="ytLoad($el)" title="Trailer" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true"></iframe>
-            </template>
             <button class="disc big" x-show="i === active && wait === 1" @click="tapPlay()" aria-label="Reproducir"><svg viewBox="0 0 24 24"><path d="M7 4.5v15L19.5 12z"/></svg></button>
-            <template x-if="fs && i === active">
-              <div class="fsc" @keydown.escape.window="fsOff()">
-                <button class="disc x" @click="fsOff()" aria-label="Cerrar pantalla completa"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-                <button class="disc" @click="ytCmd(yt(), ps === 1 ? 'pauseVideo' : 'playVideo')" :aria-label="ps === 1 ? 'Pausar' : 'Reproducir'"><svg viewBox="0 0 24 24" style="fill:#fff;stroke:none"><path x-show="ps !== 1" d="M7 4.5v15L19.5 12z"/><path x-show="ps === 1" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg></button>
-                <button class="disc" @click="toggleSound()" :aria-pressed="snd + ''" aria-label="Sonido"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path x-show="!snd" d="M17 9l4 6M21 9l-4 6"/><path x-show="snd" d="M17 8a5 5 0 0 1 0 8"/></svg></button>
-              </div>
-            </template>
           </div>
           <div class="scrim"></div>
           <div class="info">
@@ -92,7 +86,7 @@
           <div class="rail">
             <button x-show="i === active && playing" @click="toggleSound()" :aria-pressed="snd + ''" aria-label="Sonido">
               <span class="disc"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path x-show="!snd" d="M17 9l4 6M21 9l-4 6"/><path x-show="snd" d="M17 8a5 5 0 0 1 0 8"/></svg></span>Sonido</button>
-            <button x-show="i === active && key(i)" @click="fsOn()" aria-label="Pantalla completa">
+            <button x-show="i === active && clip(i)" @click="fsOn()" aria-label="Pantalla completa">
               <span class="disc"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></span>Pantalla</button>
             <button @click="shareFilm(it.f)" aria-label="Compartir">
               <span class="disc"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></span>Compartir</button>
@@ -101,19 +95,17 @@
 
         <template x-if="it.p"><div style="display:contents">
           <div class="media">
-            <svg class="tk-mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M16.6 5.8A4.3 4.3 0 0 1 15.5 3h-3.1v12.4a2.6 2.6 0 1 1-1.8-2.5V9.7a5.7 5.7 0 1 0 4.9 5.7V9a7.3 7.3 0 0 0 4.3 1.4V7.3a4.3 4.3 0 0 1-3.2-1.5z"/></svg>
-            <template x-for="k in (i === vid || i === pre) && key(i) ? [key(i)] : []" :key="k">
-              <iframe class="yt" x-init="mk($el, i)" @load="ytLoad($el)" title="Trailer" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true"></iframe>
-            </template>
+            <template x-if="it.p.poster"><img class="bd" loading="lazy" decoding="async" width="720" height="1280" :src="it.p.poster" alt=""></template>
+            <button class="disc big" x-show="i === active && wait === 1" @click="tapPlay()" aria-label="Reproducir"><svg viewBox="0 0 24 24"><path d="M7 4.5v15L19.5 12z"/></svg></button>
           </div>
           <div class="scrim"></div>
           <div class="info">
-            <span class="kicker" x-text="'TikTok · ' + it.p.author"></span>
+            <span class="kicker" x-text="(it.p.type === 'tiktok' ? 'TikTok · ' : '') + (it.p.author || '')"></span>
             <h2 class="title" x-text="it.p.title"></h2>
-            <a class="btn sec2" :href="it.p.url" target="_blank" rel="noopener">Ver en TikTok</a>
+            <a class="btn sec2" :href="it.p.url" target="_blank" rel="noopener" x-text="it.p.type === 'tiktok' ? 'Ver en TikTok' : 'Ver más'"></a>
           </div>
           <div class="rail">
-            <button x-show="i === active && playing && !it.p.tkFail" @click="toggleSound()" :aria-pressed="snd + ''" aria-label="Sonido">
+            <button x-show="i === active && playing" @click="toggleSound()" :aria-pressed="snd + ''" aria-label="Sonido">
               <span class="disc"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path x-show="!snd" d="M17 9l4 6M21 9l-4 6"/><path x-show="snd" d="M17 8a5 5 0 0 1 0 8"/></svg></span>Sonido</button>
             <button @click="shareFilm(it.p, it.p.url)" aria-label="Compartir">
               <span class="disc"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></span>Compartir</button>

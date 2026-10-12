@@ -5,3 +5,5 @@ old/
 s/
 old.multiplex/
 exp/
+.venv/
+media/trailers/src/

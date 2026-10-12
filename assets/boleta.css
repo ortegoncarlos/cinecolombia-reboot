@@ -46,7 +46,10 @@
 .room path,.legend svg path{fill:none;stroke-width:1;vector-effect:non-scaling-stroke}
 .room .floor{stroke:var(--lo)}
 .room .tier{stroke:rgba(201,205,214,.1)}
-.room .screen{stroke:#fff;stroke-width:1.5;filter:drop-shadow(0 0 6px rgba(255,255,255,.55))}
+.room .screen{stroke:#fff;stroke-width:1.5}
+/* glow as wide faint strokes, not filter:drop-shadow: a CSS filter inside the 3D-tilted .room-w paints the map black on iOS WebKit */
+.room .glow{stroke:rgba(255,255,255,.06);stroke-width:10;stroke-linecap:round}
+.room .glow.g2{stroke:rgba(255,255,255,.14);stroke-width:5}
 .room .cone{stroke:none}
 .room text{fill:var(--fg-3);font:500 9px var(--font);text-anchor:middle}
 .room .scr{font-size:8px;letter-spacing:.32em;fill:var(--fg-2)}
