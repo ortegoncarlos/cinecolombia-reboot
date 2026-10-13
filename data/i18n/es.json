@@ -94,6 +94,8 @@
 "feed.end_d": "Ya viste toda la cartelera. Vuelve pronto: cada jueves hay estrenos.",
 "feed.top": "Volver arriba",
 "feed.next": "Siguiente",
+"feed.hint_swipe": "Desliza hacia arriba para ver más",
+"feed.hint_wheel": "Usa la rueda o las flechas",
 "feed.wheel": "o la rueda del mouse para cambiar",
 "feed.section": "Sección",
 "feed.end_short": "Fin de la cartelera",

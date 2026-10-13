@@ -94,6 +94,8 @@
 "feed.end_d": "Vous avez tout vu. Revenez vite : nouvelles sorties chaque jeudi.",
 "feed.top": "Retour en haut",
 "feed.next": "Suivant",
+"feed.hint_swipe": "Balayez vers le haut pour voir plus",
+"feed.hint_wheel": "Utilisez la molette ou les flèches",
 "feed.wheel": "ou la molette pour changer",
 "feed.section": "Rubrique",
 "feed.end_short": "Fin de la liste",

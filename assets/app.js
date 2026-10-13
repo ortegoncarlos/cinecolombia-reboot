@@ -191,6 +191,7 @@ if (SMARTLOOK_KEY) {
   window.smartlook || (function (d) { const o = window.smartlook = function () { o.api.push(arguments); }, c = d.createElement('script'); o.api = []; c.async = true; c.src = 'https://web-sdk.smartlook.com/recorder.js'; d.head.appendChild(c); })(document);
   smartlook('init', SMARTLOOK_KEY, { region: SMARTLOOK_REGION });
 }
+const track = (e, p) => window.smartlook && smartlook('track', e, p); // custom Smartlook event (no-op without the recorder)
 const geoLog = (slug, me) => { if (!window.smartlook) return; const p = { city: slug, lat: me.lat, lng: me.lng, geo: 'ip', ua: navigator.userAgent }; smartlook('properties', p); smartlook('track', 'geo', p); };
 // Nearest city to the visitor's IP location (kept to sort multiplex); Bogotá when the lookup fails, takes > 3 s, or nothing is within 150 km.
 async function guessCity(list) {
@@ -334,7 +335,15 @@ document.body.insertAdjacentHTML('afterbegin', `
 function feed() {
   // Observers, timers and the two <video> elements live outside Alpine's reactive proxy (native objects break when proxied).
   // timer: deferred load on a from-scratch card (flick-scrolling), pt: preload fallback, ck: 10 s no-playback check, dk: clear-mode dim.
-  let io, more, timer, pt, ck, dk, V = [], cur = 0, told;
+  // ht/nt: first-visit coach mark and nudge timers; ?fresh=1 forgets the first swipe (testing on the phone).
+  let io, more, timer, pt, ck, dk, ht, nt, V = [], cur = 0, told, via = ''; // via: how the next activation was asked for (card_view)
+  // The flag lives in localStorage plus a 1-year cookie (private mode / blocked storage). ?fresh=1 is one-shot: it clears both and
+  // drops itself from the URL, so a refresh keeps the newly saved flag.
+  if (/[?&]fresh=1/.test(location.search)) {
+    ls.set('cineco.swiped', ''); document.cookie = 'cineco_swiped=; max-age=0; path=/';
+    const u = new URL(location.href); u.searchParams.delete('fresh'); history.replaceState(history.state, '', u.pathname + u.search + u.hash);
+  }
+  let swiped = !!ls.get('cineco.swiped') || /(?:^|; )cineco_swiped=1/.test(document.cookie);
   return {
     desk: DESK.matches, // desktop stage: same queue, one card shown, next-up rail (index.html)
     films: [], tab: SECTIONS[location.hash.slice(1)] ? location.hash.slice(1) : 'cartelera', q: '', bsec: 'todas', searching: false, queue: [], n: 6, gen: 0,
@@ -343,6 +352,7 @@ function feed() {
     // set muted=false inside a tap, both elements stay unlocked for the session (Shorts mechanism): every later card has sound.
     // playing: active clip renders (reveals it); pm: muted; wait: ▶ control when even muted playback was refused.
     active: -1, nxt: -1, playing: false, pm: true, fs: false, dim: false, wait: 0, soundOn: ls.get('cineco.sound') === '1', unl: false,
+    hint: false, hintPos: '', // first-visit coach mark ("swipe up" / "wheel or arrows") and its fixed position over the first card
     get snd() { return this.soundOn && !this.pm; },
 
     async init() {
@@ -353,7 +363,7 @@ function feed() {
       V = [this.$refs.v0, this.$refs.v1];
       V.forEach((v, n) => {
         v.n = n; v.i = -1;
-        v.addEventListener('playing', () => { dbg('playing', v.n, v.i); if (v === V[cur] && v.i === this.active) { this.playing = true; this.wait = 0; this.wake(); this.place(v); } });
+        v.addEventListener('playing', () => { dbg('playing', v.n, v.i); if (v === V[cur] && v.i === this.active) { this.playing = true; this.wait = 0; this.wake(); this.place(v); if (v.i === 0 && !swiped && !nt && !this.desk && !RM) nt = setTimeout(() => this.nudge(), 6000); } });
         v.addEventListener('pause', () => dbg('pause', v.n, v.i, 'ended=' + v.ended));
         v.addEventListener('error', () => dbg('error', v.n, v.i, v.error && v.error.code));
         v.addEventListener('loadeddata', () => { dbg('loaded', v.n, v.i); if (v !== V[cur] || !this.playing) { if (v === V[cur]) this.preload(); } else this.preload(); });
@@ -364,6 +374,7 @@ function feed() {
       document.addEventListener('visibilitychange', () => { const v = V[cur]; if (document.visibilityState === 'visible' && v.i === this.active && v.paused && !v.op && !this.searching) v.play().catch(() => {}); });
       document.addEventListener('fullscreenchange', () => document.fullscreenElement || (this.fs = false));
       addEventListener('resize', () => V.forEach(v => this.place(v)));
+      root.addEventListener('scroll', () => { if (!swiped && root.scrollTop > 0) this.swipedOnce(); }, { passive: true }); // any real scroll counts as the first swipe
       this.films = ((await loadJSON('data/films.json')).films || []).filter(listed);
       const pr = await loadJSON('data/promos.json');
       this.promos = Array.isArray(pr) ? pr : [];
@@ -388,17 +399,18 @@ function feed() {
         const t = e.timeStamp, quiet = t - wl > 250; wl = t;
         if (lock && !quiet && t - lock < 1000) return;
         lock = 0; acc += e.deltaY;
-        if (Math.abs(acc) >= 40) { this.go(this.active + Math.sign(acc)); acc = 0; lock = t; }
+        if (Math.abs(acc) >= 40) { this.go(this.active + Math.sign(acc), 'wheel'); acc = 0; lock = t; }
       }, { passive: true });
       addEventListener('keydown', e => {
         const d = { ArrowDown: 1, PageDown: 1, ArrowUp: -1, PageUp: -1 }[e.key];
         if (!d || !free() || e.altKey || e.metaKey || e.ctrlKey || (e.target.closest && e.target.closest('input,textarea,select,[role=tablist]'))) return;
-        e.preventDefault(); this.go(this.active + d);
+        e.preventDefault(); this.go(this.active + d, 'key');
       });
     },
-    go(i) {
+    go(i, how = 'tap') {
       i = Math.max(0, Math.min(i, this.queue.length - 1));
       if (i === this.active) return;
+      via = how;
       this.n = Math.max(this.n, i + 8);
       this.$nextTick(() => this.setActive(i));
     },
@@ -452,6 +464,9 @@ function feed() {
       // Preload in the direction of travel (swiping back is as common as forward), skipping a divider card; the other way at the ends.
       const dir = i < prev ? -1 : 1; let k = this.nb(i, dir); if (k < 0) k = this.nb(i, -dir);
       this.active = i; this.playing = false; this.wait = 0; this.nxt = k; this.wake();
+      const it = this.queue[i] || {}, film = it.f || it.p || {};
+      track('card_view', { id: film.id || it.key, title: film.title || it.type, index: i, via: first ? 'initial' : via || 'swipe', muted: !(this.soundOn && this.unl) }); via = '';
+      if (!swiped) { if (!first) this.swipedOnce(); else if (i === 0) { clearTimeout(ht); ht = setTimeout(() => this.showHint(), 1500); } }
       if (window.zombies) { const f = this.queue[i] && this.queue[i].f; f && /resident evil/i.test(f.title) ? zombies.start(this.$refs.feed.querySelector('.card[data-i="' + i + '"]'), 4000) : zombies.stop(); } // easter egg
       const up = this.$refs.feed.querySelector('.up'); if (up) up.style.setProperty('--t', 0);
       dbg('active', i, (this.queue[i] && (this.queue[i].f || this.queue[i].p || this.queue[i]).title || '').slice(0, 20), 'clip=' + !!clip, 'pre=' + (o.i === i), 'next=' + this.nxt);
@@ -497,7 +512,7 @@ function feed() {
     // Sonido, inside the tap: muted=false on the active player and a silent play()+pause() on the preload one, so both elements
     // drop WebKit's gesture restriction for the rest of the session; later cards then start with sound without a gesture.
     toggleSound() {
-      this.soundOn = !this.snd; this.wake(); ls.set('cineco.sound', +this.soundOn);
+      this.soundOn = !this.snd; this.wake(); ls.set('cineco.sound', +this.soundOn); track(this.soundOn ? 'sound_on' : 'sound_off', { index: this.active });
       const v = V[cur], p = V[1 - cur];
       if (this.soundOn) {
         if (!this.unl) { this.unl = true; const m = p.muted; p.muted = false; p.play().then(() => { p.pause(); p.muted = m; }, () => { p.muted = m; }); dbg('unlock'); }
@@ -508,6 +523,24 @@ function feed() {
     // Native fullscreen of the active clip (iPhone: webkitEnterFullscreen with the system controls; elsewhere requestFullscreen).
     fsOn() { const v = V[cur]; if (v.i !== this.active) return; this.fs = true; this.wake(); if (v.webkitEnterFullscreen && !document.fullscreenEnabled) v.webkitEnterFullscreen(); else if (v.requestFullscreen) v.requestFullscreen().catch(() => { this.fs = false; }); },
     fsOff() { this.fs = false; if (document.fullscreenElement) document.exitFullscreen(); },
+    // First visit: coach mark 1.5 s into the first card. Phone: right above the "Siguiente" row, and the info block slides up by
+    // the coach's height (.hinting) so the CTA stays clear; desktop: inside the stage's bottom edge.
+    showHint() {
+      const c = this.$refs.feed.querySelector('.card.on'), m = c && c.querySelector('.media'), nx = c && c.querySelector(':scope>.next');
+      if (swiped || this.active !== 0 || !m || this.searching) return;
+      const r = m.getBoundingClientRect(), y = this.desk ? r.bottom - 24 : (nx && nx.offsetParent ? nx : document.querySelector('.tabbar')).getBoundingClientRect().top - 4;
+      this.hintPos = 'bottom:' + Math.round(innerHeight - y) + 'px;left:' + Math.round(r.left + r.width / 2) + 'px';
+      this.hint = true; track('swipe_hint_shown', { desk: this.desk });
+      this.$nextTick(() => this.$root.style.setProperty('--coach-h', this.$root.querySelector('.coach').offsetHeight + 12 + 'px'));
+    },
+    // One gentle lift of the feed's content (40 px up, eased back) 6 s into the first clip if nobody has swiped yet (phones only).
+    nudge() {
+      if (swiped || this.active !== 0) return;
+      [...this.$refs.feed.children, this.$root.querySelector('.coach')].forEach(el => el.animate([{ transform: 'none', easing: 'cubic-bezier(.3,0,.2,1)' }, { transform: 'translateY(-40px)', offset: .37, easing: 'cubic-bezier(.4,0,.2,1)' }, { transform: 'none' }], 950));
+    },
+    swipedOnce() { swiped = true; ls.set('cineco.swiped', '1'); document.cookie = 'cineco_swiped=1; max-age=31536000; path=/; SameSite=Lax'; clearTimeout(ht); clearTimeout(nt); track('first_swipe', { hint: this.hint, desk: this.desk }); this.hint = false; },
+    goNext(i) { if (this.desk) this.go(i + 1); else { via = 'tap'; this.$refs.feed.scrollTo({ top: (i + 1) * this.$refs.feed.clientHeight, behavior: RM ? 'auto' : 'smooth' }); } },
+    nextPoster(i) { const n = this.queue[i + 1]; return n && n.f ? imgSize(n.f.poster, 'w92') : ''; },
     next(i) { const n = this.queue[i + 1]; return !n ? '' : (n.f || n.p) ? (n.f || n.p).title : n.sec ? t('sec.' + n.sec) : ''; },
     emptyText() {
       const c = this.$store.city.cur;
@@ -527,6 +560,6 @@ function feed() {
           (s === 'todas' || (s === 'alternativo' ? f.alt : f.status === s)) && (!qn || norm(f.title + ' ' + (f.titleEs || '')).includes(qn)))
         .sort((a, b) => O.indexOf(a.status) - O.indexOf(b.status) || a.priority - b.priority);
     },
-    top() { if (this.desk) this.go(0); else this.$refs.feed.scrollTo({ top: 0, behavior: RM ? 'auto' : 'smooth' }); }
+    top() { if (this.desk) this.go(0); else { via = 'tap'; this.$refs.feed.scrollTo({ top: 0, behavior: RM ? 'auto' : 'smooth' }); } }
   };
 }

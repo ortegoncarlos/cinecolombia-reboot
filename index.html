@@ -23,7 +23,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.9/cdn.min.js" defer></script>
 </head>
 <body>
-<div x-data="feed()" :class="dim && !searching && !$store.city.open && 'dim'" @pointerdown="wake()" @focusin="wake()">
+<div x-data="feed()" :class="{ dim: dim && !searching && !$store.city.open, hinting: hint && !desk }" @pointerdown="wake()" @focusin="wake()">
   <h1 class="sr" data-i18n="feed.h1">Cine Colombia: cartelera, preventa y estrenos</h1>
   <header class="top" x-ref="top">
     <div class="bar">
@@ -81,7 +81,7 @@
             <p class="alt" x-show="it.f.titleEs" x-text="it.f.titleEs"></p>
             <div class="meta"><span class="rate" x-show="rateLabel(it.f.rating)" x-text="rateLabel(it.f.rating)"></span><span x-text="metaLine(it.f)"></span></div>
             <div class="attrs"><template x-for="a in it.f.attributes.slice(0, 4)" :key="a"><span class="attr" x-text="attrLabel(a)"></span></template></div>
-            <a class="btn" :href="'pelicula.html?id=' + it.f.id">
+            <a class="btn" :href="'pelicula.html?id=' + it.f.id" @click="track('cta_click', { id: it.f.id, index: i })">
               <span x-text="$t(it.f.status === 'pronto' ? 'feed.details' : 'feed.showtimes')"></span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </a>
@@ -138,7 +138,10 @@
           </div>
         </template>
 
-        <p class="next" x-show="it.type !== 'end' && next(i)" aria-hidden="true"><span x-text="$t('feed.next')"></span> · <b x-text="next(i)"></b></p>
+        <button class="next" x-show="it.type !== 'end' && next(i)" :tabindex="i === active ? 0 : -1" @click="goNext(i)" :aria-label="$t('feed.next') + ': ' + next(i)">
+          <img x-show="nextPoster(i)" :src="nextPoster(i)" width="20" height="30" alt="" loading="lazy" decoding="async"><span><span x-text="$t('feed.next')"></span> · <b x-text="next(i)"></b></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
       </article>
     </template>
     <!-- desktop only: next-up rail beside the stage (current card + the following ones) -->
@@ -160,6 +163,11 @@
     <!-- ponytail: finite catalog, the "infinite" feed ends on an end card instead of looping -->
     <div class="sentinel" x-ref="sentinel"></div>
   </main>
+  <!-- first visit only: swipe (phone) / wheel (desktop) coach mark over the first card; never intercepts taps -->
+  <div class="coach" x-show="hint && !searching && !$store.city.open" x-cloak x-transition.opacity aria-hidden="true" :style="hintPos">
+    <svg x-show="!desk" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+    <span x-text="$t(desk ? 'feed.hint_wheel' : 'feed.hint_swipe')"></span>
+  </div>
   <div class="browse" x-show="searching" x-cloak role="dialog" aria-modal="true" :aria-label="$t('search.title')" @keydown.escape="close()">
     <div class="bar">
       <input class="search" type="search" x-ref="q" x-model.debounce.150ms="q" :placeholder="$t('search.ph')" :aria-label="$t('search.input')">

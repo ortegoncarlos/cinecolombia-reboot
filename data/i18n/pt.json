@@ -94,6 +94,8 @@
 "feed.end_d": "Você já viu tudo em cartaz. Volte logo: toda quinta tem estreia.",
 "feed.top": "Voltar ao topo",
 "feed.next": "Próximo",
+"feed.hint_swipe": "Deslize para cima para ver mais",
+"feed.hint_wheel": "Use a roda do mouse ou as setas",
 "feed.wheel": "ou a roda do mouse para trocar",
 "feed.section": "Seção",
 "feed.end_short": "Fim da lista",

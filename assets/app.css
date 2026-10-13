@@ -147,7 +147,18 @@ html:not(.rdy) body{visibility:hidden} /* until the language dictionary is in an
 .rail button:focus-visible{outline:0}
 .rail button:focus-visible .disc{outline:2px solid var(--accent);outline-offset:2px}
 .rail [aria-pressed=true] .disc{background:var(--accent);border-color:var(--accent)}
-.card>.next{position:absolute;z-index:2;left:16px;right:16px;bottom:calc(var(--tabbar) + 12px);font-size:12px;color:var(--fg-2);letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card>.next{position:absolute;z-index:2;left:16px;bottom:var(--tabbar);max-width:calc(100% - 92px);height:44px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg-2);letter-spacing:.04em;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.card>.next>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card>.next img{width:20px;height:30px;border-radius:3px;object-fit:cover;box-shadow:0 0 0 1px var(--line)}
+.card>.next svg{filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
+/* first-visit coach mark: fixed over the first card, outside the dimmed card UI, never hit-testable */
+.coach{position:fixed;z-index:15;translate:-50% 0;display:flex;flex-direction:column;align-items:center;gap:0;pointer-events:none;color:#fff}
+.coach{width:max-content;max-width:calc(100% - 152px);text-align:center} /* centred between the info's left edge and the rail */
+.coach span{padding:8px 14px;border-radius:20px;background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 0 0 1px var(--line);font-size:13px;font-weight:500;line-height:1.35;text-wrap:balance}
+.info{transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.hinting .card.on .info{transform:translateY(calc(-1 * var(--coach-h,0px)))}
+.coach svg{filter:drop-shadow(0 1px 3px rgba(0,0,0,.7));animation:coach 1.1s cubic-bezier(.4,0,.2,1) .3s 2}
+@keyframes coach{40%{transform:translateY(-10px)}}
 /* signature: trailer progress hairline (--t = 0..1 from infoDelivery) */
 .card::after{content:"";position:absolute;left:0;right:0;bottom:var(--tabbar);height:2px;background:linear-gradient(90deg,rgba(255,255,255,.4),#fff);transform-origin:left;transform:scaleX(var(--t,0));transition:transform .3s linear,opacity .3s;pointer-events:none}
 .card:not(.on)::after{opacity:0}
@@ -158,7 +169,7 @@ html:not(.rdy) body{visibility:hidden} /* until the language dictionary is in an
 .plain p{color:var(--fg-2);font-size:16px;line-height:1.5;max-width:30ch}
 .plain .btn{margin-top:12px}
 .plain .count{font-size:14px;color:var(--fg-3);font-variant-numeric:tabular-nums}
-.plain>.next{left:24px;font-size:12px;line-height:1.4;max-width:none}
+.plain>.next{left:24px;font-size:12px;line-height:1.4}
 .sentinel{height:1px}
 /* search: full-screen browse grid */
 .browse{position:fixed;inset:0;z-index:50;overflow-y:auto;background:#000;padding:calc(10px + env(safe-area-inset-top)) 16px 32px;transition:translate .28s cubic-bezier(.2,.8,.2,1)}
@@ -204,8 +215,9 @@ html:not(.rdy) body{visibility:hidden} /* until the language dictionary is in an
 
 /* short phones (<=720px tall): drop the poster chip and tighten the stack so the video keeps room */
 @media (max-width:1023px) and (max-height:720px){
-  .feed .poster-chip,.feed .card>.next{display:none}
-  .feed .info{gap:6px;margin-top:-16px;padding-bottom:calc(var(--tabbar) + 24px)}
+  .feed .poster-chip{display:none}
+  .feed .card>.next{height:36px}
+  .feed .info{gap:6px;margin-top:-16px;padding-bottom:calc(var(--tabbar) + 36px)}
   .feed .chiprow>div{gap:4px}
   .feed .title{font-size:26px}
   .feed .title.long{font-size:21px}
@@ -220,7 +232,7 @@ html:not(.rdy) body{visibility:hidden} /* until the language dictionary is in an
   .feed .info .btn{width:auto;align-self:flex-start;min-height:44px;padding:0 16px;background:rgba(0,0,0,.45);border:1px solid var(--line);font-size:15px}
   .feed .info .btn:active{background:rgba(255,255,255,.16)}
   /* clear mode: the card's lower block dims over the playing trailer; transition only into .dim so restoring is instant */
-  .dim .card.on .info>:not(.btn),.dim .card.on>.next{opacity:.35;transition:opacity .6s ease}
+  .dim .card.on .info>:not(.btn){opacity:.35;transition:opacity .6s ease}
   .dim .card.on :is(.info .btn,.rail .disc){opacity:.6;transition:opacity .6s ease}
   .dim .card.on .rail button{color:rgb(255 255 255/.35);transition:color .6s ease}
 }

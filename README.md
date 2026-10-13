@@ -37,7 +37,7 @@ Promo cards in the Cartelera feed come from `data/promos.json`: `after: n` place
 
 On the first visit the browser asks get.geojs.io for an approximate location based on the IP address, only to pick the nearest city and sort multiplexes by distance; nothing else is sent anywhere, and the city, location and sound choices are stored locally in the browser (localStorage).
 
-The demo can record sessions with [Smartlook](https://www.smartlook.com/) for the product team's review: set `SMARTLOOK_KEY` (and the project region) in `assets/app.js`. When enabled, the approximate IP-based city and coordinates are attached to the session; the exact GPS position used to sort multiplexes is never sent.
+The demo can record sessions with [Smartlook](https://www.smartlook.com/) for the product team's review: set `SMARTLOOK_KEY` (and the project region) in `assets/app.js`. When enabled, the approximate IP-based city and coordinates are attached to the session; the exact GPS position used to sort multiplexes is never sent. The feed also sends custom events (no-ops when Smartlook is off): `card_view` on every card activation `{ id, title, index, via: swipe|wheel|key|tap|initial, muted }`, `cta_click` on Ver horarios / Ver detalles `{ id, index }`, `sound_on` / `sound_off` on Sonido, and, for the first-visit swipe coach mark, `swipe_hint_shown` and `first_swipe` `{ hint, desk }` (reset the first visit with `?fresh=1`).
 
 ## Créditos
 

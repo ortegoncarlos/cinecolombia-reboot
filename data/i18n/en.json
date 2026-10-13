@@ -94,6 +94,8 @@
 "feed.end_d": "You've seen everything that's showing. Come back soon: new releases every Thursday.",
 "feed.top": "Back to top",
 "feed.next": "Next",
+"feed.hint_swipe": "Swipe up for more",
+"feed.hint_wheel": "Use the wheel or arrow keys",
 "feed.wheel": "or the mouse wheel to switch",
 "feed.section": "Section",
 "feed.end_short": "End of the list",

@@ -92,6 +92,8 @@
 "feed.end_d": "你已看完全部在映影片。每周四都有新片，记得回来看看。",
 "feed.top": "返回顶部",
 "feed.next": "下一部",
+"feed.hint_swipe": "上滑查看更多",
+"feed.hint_wheel": "使用滚轮或方向键",
 "feed.wheel": "或滚动鼠标滚轮切换",
 "feed.section": "分类",
 "feed.end_short": "列表结束",
