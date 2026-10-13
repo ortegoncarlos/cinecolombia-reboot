@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Película · Cine Colombia</title>
-<meta name="description" content="Horarios y boletas en Cine Colombia.">
+<title data-i18n="meta.title_film">Película · Cine Colombia</title>
+<meta name="description" data-i18n-a="content:meta.desc_film" content="Horarios y boletas en Cine Colombia.">
 <meta property="og:site_name" content="Cine Colombia">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Cine Colombia · Cartelera y boletas">
@@ -20,6 +20,7 @@
 <link rel="preconnect" href="https://www.youtube-nocookie.com">
 <link rel="preload" href="data/films.json" as="fetch" crossorigin>
 <link rel="preload" href="data/cities.json" as="fetch" crossorigin>
+<link rel="preload" href="data/i18n/es.json" as="fetch" crossorigin>
 <link rel="stylesheet" href="assets/app.css">
 <link rel="stylesheet" href="assets/pelicula.css">
 <script src="assets/app.js" defer></script>
@@ -29,43 +30,43 @@
 <body>
 <div class="pel" x-data="pel()">
  <header class="dh" :class="{ stuck }">
-  <button class="icon-btn" aria-label="Volver" @click="back()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <button class="icon-btn" :aria-label="$t('back')" @click="back()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
   <p class="dh-t" aria-hidden="true"><span x-text="film ? section : ''"></span><b x-text="film ? film.title : ''"></b></p>
-  <button class="icon-btn" aria-label="Compartir" :style="film ? '' : 'visibility:hidden'" @click="shareFilm(film)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
+  <div class="dh-r"><button class="icon-btn" :aria-label="$t('share')" :style="film ? '' : 'visibility:hidden'" @click="shareFilm(film)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button><span data-lang></span></div>
  </header>
 
  <main class="pel-main page">
   <div class="nf" x-show="missing" x-cloak>
-   <h1>No encontramos esta película</h1>
-   <p>Puede que ya no esté en cartelera o que el enlace esté incompleto.</p>
-   <a class="btn" href="index.html">Ver cartelera</a>
+   <h1 x-text="$t('film.nf_t')"></h1>
+   <p x-text="$t('film.nf_d')"></p>
+   <a class="btn" href="index.html" x-text="$t('see_cartelera')"></a>
   </div>
 
   <template x-if="film">
    <div class="pel-grid">
-    <section class="dcard" :class="{ on: shown }" aria-label="Película">
+    <section class="dcard" :class="{ on: shown }" :aria-label="$t('film.label')">
      <div class="media" :class="{ vert: !!tok }">
       <div class="mv">
        <template x-if="heroImg(film)"><img class="bd" :class="film.hero === film.poster && 'pf'" fetchpriority="high" decoding="async" width="1280" height="720" :src="imgSize(heroImg(film), BD)" alt=""></template>
        <template x-if="!heroImg(film)"><div><img class="fb-bg" decoding="async" :src="imgSize(film.poster, 'w185')" alt=""><img class="fb-poster" fetchpriority="high" decoding="async" width="500" height="750" :src="imgSize(film.poster, 'w500')" alt=""></div></template>
        <template x-for="u in vid ? [src] : []" :key="u">
-        <iframe class="yt" :class="{ tk: !!tok }" :src="u" x-init="mk($el)" @load="ytLoad($el)" title="Trailer" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true"></iframe>
+        <iframe class="yt" :class="{ tk: !!tok }" :src="u" x-init="mk($el)" @load="ytLoad($el)" :title="$t('film.trailer')" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true"></iframe>
        </template>
       </div>
       <div class="rail">
-       <button x-show="shown" @click="toggleSound()" :aria-pressed="snd + ''" aria-label="Sonido">
-        <span class="disc"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path x-show="!snd" d="M17 9l4 6M21 9l-4 6"/><path x-show="snd" d="M17 8a5 5 0 0 1 0 8"/></svg></span>Sonido</button>
-       <button x-show="!vid && (film.youtubeKey || film.verticalTrailer)" @click="vid = true" aria-label="Ver trailer">
-        <span class="disc"><svg viewBox="0 0 24 24" style="fill:#fff;stroke:none"><path d="M7 4.5v15L19.5 12z"/></svg></span>Trailer</button>
+       <button x-show="shown" @click="toggleSound()" :aria-pressed="snd + ''" :aria-label="$t('feed.sound')">
+        <span class="disc"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path x-show="!snd" d="M17 9l4 6M21 9l-4 6"/><path x-show="snd" d="M17 8a5 5 0 0 1 0 8"/></svg></span><span x-text="$t('feed.sound')"></span></button>
+       <button x-show="!vid && (film.youtubeKey || film.verticalTrailer)" @click="vid = true" :aria-label="$t('film.watch_trailer')">
+        <span class="disc"><svg viewBox="0 0 24 24" style="fill:#fff;stroke:none"><path d="M7 4.5v15L19.5 12z"/></svg></span><span x-text="$t('film.trailer')"></span></button>
       </div>
      </div>
      <div class="info">
       <div class="chiprow">
-       <img class="poster-chip" decoding="async" width="56" height="84" :src="imgSize(film.poster, 'w185')" :srcset="imgSize(film.poster, 'w185') + ' 185w, ' + imgSize(film.poster, 'w342') + ' 342w'" sizes="(min-width:1024px) 168px, 56px" :alt="'Póster de ' + film.title">
+       <img class="poster-chip" decoding="async" width="56" height="84" :src="imgSize(film.poster, 'w185')" :srcset="imgSize(film.poster, 'w185') + ' 185w, ' + imgSize(film.poster, 'w342') + ' 342w'" sizes="(min-width:1024px) 168px, 56px" :alt="$t('film.poster_of', { title: film.title })">
        <div>
         <span class="tag" x-show="filmTag(film)" x-text="filmTag(film)"></span>
         <span class="kicker" x-show="film.alt" x-text="altLabel(film)"></span>
-        <span class="kicker" x-show="film.releaseDate > TODAY" x-text="'Estreno ' + fmtRelease(film.releaseDate, true)"></span>
+        <span class="kicker" x-show="film.releaseDate > TODAY" x-text="$t('tag.opens', { date: fmtRelease(film.releaseDate, true) })"></span>
        </div>
       </div>
       <h1 class="title" :class="{ long: film.title.length > 34 }" x-text="film.title" x-init="watchTitle($el)"></h1>
@@ -74,19 +75,19 @@
       <div class="attrs" x-show="film.attributes.length"><template x-for="a in film.attributes" :key="a"><span class="attr" x-text="attrLabel(a)"></span></template></div>
       <!-- desktop only (hidden below 1024px): the hero's action row -->
       <div class="d-acts">
-       <a class="btn" href="#horarios" x-show="film.status !== 'pronto'">Ver horarios<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
-       <button class="pill" @click="shareFilm(film)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>Compartir</button>
+       <a class="btn" href="#horarios" x-show="film.status !== 'pronto'"><span x-text="$t('feed.showtimes')"></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+       <button class="pill" @click="shareFilm(film)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg><span x-text="$t('share')"></span></button>
       </div>
      </div>
     </section>
 
     <section class="gal" x-show="items.length" aria-labelledby="h-gal">
-     <h2 id="h-gal">Galería</h2>
+     <h2 id="h-gal" x-text="$t('film.gallery')"></h2>
      <div class="gal-s">
       <template x-for="(it, i) in items" :key="i">
-       <button class="gal-t" :data-more="i === 5 && items.length > 6 ? '+' + (items.length - 6) : null" @click="lb(i, $el)" :aria-label="it.v ? 'Video: ' + it.v.name : 'Imagen ' + (i + 1)">
+       <button class="gal-t" :data-more="i === 5 && items.length > 6 ? '+' + (items.length - 6) : null" @click="lb(i, $el)" :aria-label="it.v ? $t('film.video', { name: it.v.name }) : $t('film.image', { n: i + 1 })">
         <img :src="it.v ? thumb(it.v) : it.src" loading="lazy" decoding="async" width="480" height="270" alt="">
-        <span class="gal-v" x-show="it.v"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15L19.5 12z"/></svg><i x-text="it.v && (VT[it.v.type] || 'Video')"></i></span>
+        <span class="gal-v" x-show="it.v"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15L19.5 12z"/></svg><i x-text="it.v && tOr('vt.' + it.v.type, $t('vt.Video'))"></i></span>
        </button>
       </template>
      </div>
@@ -94,32 +95,32 @@
 
     <section class="sch" id="horarios" aria-labelledby="h-hor">
      <div class="sch-h">
-      <h2 id="h-hor">Horarios</h2>
-      <button class="pill" x-show="film.status !== 'pronto'" @click="$store.city.open = true" :aria-label="'Cambiar ciudad, actual ' + (cn || 'ninguna')">
+      <h2 id="h-hor" x-text="$t('st.title')"></h2>
+      <button class="pill" x-show="film.status !== 'pronto'" @click="$store.city.open = true" :aria-label="cityAria()">
        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
-       <span x-text="cn || 'Elige tu ciudad'"></span>
+       <span x-text="cityName()"></span>
        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
       </button>
      </div>
 
      <template x-if="film.status === 'pronto'">
       <div class="empty">
-       <b x-text="'Estreno ' + fmtRelease(film.releaseDate)"></b>
+       <b x-text="$t('tag.opens', { date: fmtRelease(film.releaseDate) })"></b>
       </div>
      </template>
 
      <template x-if="film.status !== 'pronto'">
       <div class="sch-b">
        <div class="empty" x-show="!$store.city.cur">
-        <b>Elige tu ciudad</b>
-        <p>Así te mostramos los multiplex y las funciones cerca de ti.</p>
-        <div class="acts"><button class="btn" @click="$store.city.open = true">Elegir ciudad</button></div>
+        <b x-text="$t('city.choose')"></b>
+        <p x-text="$t('film.nocity_d')"></p>
+        <div class="acts"><button class="btn" @click="$store.city.open = true" x-text="$t('city.pick')"></button></div>
        </div>
        <div class="empty" x-show="none">
-        <b x-text="'Aún no hay funciones en ' + cn"></b>
-        <p x-text="film.status === 'preventa' ? 'La preventa todavía no tiene horarios publicados para esta semana. Estreno el ' + fmtRelease(film.releaseDate) + '.' : 'Esta película no tiene funciones publicadas en ' + cn + ' del ' + fmtRelease(WEEK[0], 1) + ' al ' + fmtRelease(WEEK[6], 1) + '.'"></p>
+        <b x-text="$t('feed.empty_t', { city: cn })"></b>
+        <p x-text="film.status === 'preventa' ? $t('film.pv_none', { date: fmtRelease(film.releaseDate) }) : $t('film.week_none', { city: cn, from: fmtRelease(WEEK[0], 1), to: fmtRelease(WEEK[6], 1) })"></p>
         <div class="acts">
-         <button class="pill ghost" @click="$store.city.open = true">Cambiar ciudad</button>
+         <button class="pill ghost" @click="$store.city.open = true" x-text="$t('city.change')"></button>
         </div>
        </div>
 
@@ -127,24 +128,24 @@
 
        <template x-if="ready && !none">
         <div class="sch-b">
-         <div class="pvk" x-show="pv"><p class="sec">Preventa · semana de estreno</p><p class="kicker">Compra anticipada para la semana de estreno. Eliges tus sillas ahora.</p></div>
-         <div class="dates" role="tablist" aria-label="Día">
+         <div class="pvk" x-show="pv"><p class="sec" x-text="$t('film.pv_k')"></p><p class="kicker" x-text="$t('film.pv_d')"></p></div>
+         <div class="dates" role="tablist" :aria-label="$t('st.day')">
           <template x-for="(d, i) in W" :key="d">
            <button class="date" role="tab" :id="'d' + i" aria-controls="sched" :class="{ none: days[i] && !has(i), unk: !days[i] }" :aria-selected="(sel === i) + ''" :tabindex="sel === i ? 0 : -1" @click="pick(i)" @keydown="nav($event, i)"
-            :aria-label="fmtDate(d).label + ' ' + fmtDate(d).day + (days[i] && !has(i) ? ', sin funciones' : '')"><small x-text="fmtDate(d).label"></small><b x-text="fmtDate(d).day"></b></button>
+            :aria-label="fmtDate(d).label + ' ' + fmtDate(d).day + (days[i] && !has(i) ? ', ' + $t('st.none_short') : '')"><small x-text="fmtDate(d).label"></small><b x-text="fmtDate(d).day"></b></button>
           </template>
          </div>
          <div id="sched" role="tabpanel" :aria-labelledby="'d' + sel" class="sch-b">
           <p class="sum" x-show="summary" aria-live="polite"><b x-text="list.length"></b><span x-text="summary"></span></p>
-          <div class="chips" x-show="chips.length || isToday" role="group" aria-label="Filtrar funciones">
-           <button class="chip" x-show="isToday" :aria-pressed="now + ''" @click="now = !now"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Ahora</button>
+          <div class="chips" x-show="chips.length || isToday" role="group" :aria-label="$t('st.filter')">
+           <button class="chip" x-show="isToday" :aria-pressed="now + ''" @click="now = !now"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span x-text="$t('st.now')"></span></button>
            <template x-for="a in chips" :key="a"><button class="chip" :aria-pressed="f.includes(a) + ''" @click="f = f.includes(a) ? f.filter(x => x !== a) : [...f, a]; all = false" x-text="attrLabel(a)"></button></template>
           </div>
 
           <section class="nx" x-show="next.length" aria-labelledby="h-nx">
-           <h3 id="h-nx" x-text="'Próximas funciones · ' + (isToday ? 'hoy' : dl(sel))"></h3>
+           <h3 id="h-nx" x-text="$t('st.next', { when: isToday ? $t('date.today_l') : dl(sel) })"></h3>
            <template x-for="n in next" :key="n.s.id">
-            <a class="nx-r" :href="'boleta.html?show=' + n.s.id"><b x-text="n.s.time"></b><span><span x-text="n.m.name"></span><small x-text="n.s.attrs.join(' ')"></small></span><em x-text="isToday ? rel(n.s.time) : ''"></em></a>
+            <a class="nx-r" :href="'boleta.html?show=' + n.s.id"><b x-text="n.s.time"></b><span><span x-text="n.m.name"></span><small x-text="n.s.attrs.map(attrShort).join(' ')"></small></span><em x-text="isToday ? rel(n.s.time) : ''"></em></a>
            </template>
           </section>
 
@@ -156,33 +157,33 @@
             <div class="sts">
              <template x-for="s in g.times" :key="s.id">
               <a class="st" :class="{ past: past(s), next: next[0] && next[0].s === s }" :href="s.soldOut || past(s) ? null : 'boleta.html?show=' + s.id" :aria-disabled="(s.soldOut || past(s)) + ''"
-               :aria-label="s.time + ', ' + (s.soldOut ? 'agotada' : past(s) ? 'ya comenzó' : tags(s) + ', ' + price(g.s.id, s) + (low(s) ? ', pocas sillas' : '') + ', comprar')">
-               <span class="st-k" x-show="next[0] && next[0].s === s">Próxima</span>
+               :aria-label="s.time + ', ' + (s.soldOut ? $t('st.sold_l') : past(s) ? $t('st.started') : tags(s) + ', ' + price(g.s.id, s) + (low(s) ? ', ' + $t('st.few_l') : '') + ', ' + $t('st.buy'))">
+               <span class="st-k" x-show="next[0] && next[0].s === s" x-text="$t('st.next1')"></span>
                <b x-text="s.time"></b>
-               <small class="st-p" x-text="s.soldOut ? 'Agotada' : price(g.s.id, s)"></small>
-               <span class="st-t"><template x-for="a in s.attrs.filter(a => a !== '2D')" :key="a"><i :class="{ x: !LANG.includes(a) }" x-text="a === 'Imax' ? 'IMAX' : a"></i></template></span>
-               <em class="st-l" x-show="low(s)">Pocas sillas</em>
+               <small class="st-p" x-text="s.soldOut ? $t('st.sold') : price(g.s.id, s)"></small>
+               <span class="st-t"><template x-for="a in s.attrs.filter(a => a !== '2D')" :key="a"><i :class="{ x: !LANG.includes(a) }" x-text="attrShort(a)"></i></template></span>
+               <em class="st-l" x-show="low(s)" x-text="$t('st.few')"></em>
               </a>
              </template>
             </div>
            </article>
           </template>
-          <button class="pill ghost wide" x-show="!all && list.length > 4" @click="all = true" x-text="'Ver ' + (list.length - 4) + ' multiplex más'"></button>
+          <button class="pill ghost wide" x-show="!all && list.length > 4" @click="all = true" x-text="$t('st.more_sites', { n: list.length - 4 })"></button>
           <button class="pill ghost" x-show="list.length > 1 && $store.geo.pos?.src !== 'gps'" @click="$store.geo.ask()">
            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-           <span x-text="$store.geo.busy ? 'Buscando…' : 'Ordenar con mi ubicación exacta'"></span>
+           <span x-text="$t($store.geo.busy ? 'geo.busy' : 'geo.sort_exact')"></span>
           </button>
 
           <div class="empty" x-show="days[sel] && !has(sel)">
-           <b x-text="'No hay funciones ' + onDay(sel)"></b>
-           <p>Los horarios de ese día aún no están publicados.</p>
-           <div class="acts" x-show="alt >= 0"><button class="btn" @click="pick(alt)" x-text="'Ver ' + dl(alt)"></button></div>
+           <b x-text="$t('st.none_day', { when: onDay(sel) })"></b>
+           <p x-text="$t('st.unpublished')"></p>
+           <div class="acts" x-show="alt >= 0"><button class="btn" @click="pick(alt)" x-text="$t('st.see_day', { day: dl(alt) })"></button></div>
           </div>
           <div class="empty" x-show="has(sel) && !list.length">
-           <b x-text="f.length ? 'Ninguna función con estos filtros' : 'Ya comenzaron todas las funciones de hoy'"></b>
+           <b x-text="$t(f.length ? 'st.none_filter' : 'st.all_started')"></b>
            <div class="acts">
-            <button class="btn" x-show="f.length" @click="f = []; now = false">Quitar filtros</button>
-            <button class="btn" x-show="!f.length && alt >= 0" @click="pick(alt)" x-text="'Ver ' + dl(alt)"></button>
+            <button class="btn" x-show="f.length" @click="f = []; now = false" x-text="$t('st.clear')"></button>
+            <button class="btn" x-show="!f.length && alt >= 0" @click="pick(alt)" x-text="$t('st.see_day', { day: dl(alt) })"></button>
            </div>
           </div>
          </div>
@@ -193,23 +194,23 @@
     </section>
 
     <section class="about" aria-labelledby="h-about">
-     <h2 id="h-about">Acerca de la película</h2>
+     <h2 id="h-about" x-text="$t('film.about')"></h2>
      <p class="syn" :class="more || 'clamp'" x-text="film.synopsis || film.shortSynopsis" x-init="$nextTick(() => long = $el.scrollHeight > $el.clientHeight + 2)"></p>
-     <button class="pill ghost" x-show="long" @click="more = !more" :aria-expanded="more + ''" x-text="more ? 'Ver menos' : 'Ver más'"></button>
+     <button class="pill ghost" x-show="long" @click="more = !more" :aria-expanded="more + ''" x-text="$t(more ? 'film.less' : 'feed.more')"></button>
      <ul class="cr">
-      <li x-show="film.director"><span>Dirección</span> <span x-text="film.director"></span></li>
-      <li x-show="film.cast.length"><span>Reparto</span> <span x-text="film.cast.map(s => s.replace(/\s+/g, ' ')).join(', ')"></span></li>
-      <li x-show="film.vote"><span>Calificación TMDB</span> <span class="num" x-text="vote"></span></li>
+      <li x-show="film.director"><span x-text="$t('film.director')"></span> <span x-text="film.director"></span></li>
+      <li x-show="film.cast.length"><span x-text="$t('film.cast')"></span> <span x-text="film.cast.map(s => s.replace(/\s+/g, ' ')).join(', ')"></span></li>
+      <li x-show="film.vote"><span x-text="$t('film.tmdb')"></span> <span class="num" x-text="vote"></span></li>
      </ul>
     </section>
    </div>
   </template>
  </main>
 
- <div class="lb" :class="{ on: lbi >= 0 }" x-ref="lb" role="dialog" aria-modal="true" aria-label="Galería" @keydown.escape="lbClose()" @keydown.arrow-right="lbGo(1)" @keydown.arrow-left="lbGo(-1)" @keydown.tab="trap($event)">
+ <div class="lb" :class="{ on: lbi >= 0 }" x-ref="lb" role="dialog" aria-modal="true" :aria-label="$t('film.gallery')" @keydown.escape="lbClose()" @keydown.arrow-right="lbGo(1)" @keydown.arrow-left="lbGo(-1)" @keydown.tab="trap($event)">
   <div class="lb-h">
    <span x-text="(lbi + 1) + ' / ' + items.length"></span>
-   <button class="icon-btn" x-ref="lbx" @click="lbClose()" aria-label="Cerrar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+   <button class="icon-btn" x-ref="lbx" @click="lbClose()" :aria-label="$t('close')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="lb-s" x-ref="lbs" @scroll.debounce.80ms="lbSync()">
    <template x-for="(it, i) in (film ? items : [])" :key="i">
@@ -220,14 +221,14 @@
    </template>
   </div>
   <div class="lb-f">
-   <button class="icon-btn" @click="lbGo(-1)" :disabled="lbi < 1" aria-label="Anterior"></button>
-   <button class="icon-btn" @click="lbGo(1)" :disabled="lbi >= items.length - 1" aria-label="Siguiente"></button>
+   <button class="icon-btn" @click="lbGo(-1)" :disabled="lbi < 1" :aria-label="$t('prev')"></button>
+   <button class="icon-btn" @click="lbGo(1)" :disabled="lbi >= items.length - 1" :aria-label="$t('feed.next')"></button>
   </div>
  </div>
 </div>
 
-<nav class="tabbar" aria-label="Principal">
- <a href="index.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 4v5M16 4v5"/></svg>Cartelera</a>
+<nav class="tabbar" aria-label="Principal" data-i18n-a="aria-label:nav.main">
+ <a href="index.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 4v5M16 4v5"/></svg><span data-i18n="nav.cartelera">Cartelera</span></a>
  <a href="multiplex.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Multiplex</a>
 </nav>
 <script>
@@ -238,7 +239,7 @@ function pel() {
  const rank = a => (ORDER.indexOf(a) + 1) || 99, BASE = { '2D': 12000, '3D': 18000, Dinamix: 18000, Megasala: 24000, Imax: 24000, Onyx: 32000 };
  let run = 0, timer, op; // run: stale-city guard; op: lightbox opener
  return {
-  LANG, PR: null, lbi: -1, VT: { Trailer: 'Trailer', Teaser: 'Avance', Clip: 'Clip', Featurette: 'Detrás de cámaras', 'Behind the Scenes': 'Detrás de cámaras' },
+  LANG, PR: null, lbi: -1,
   film: null, missing: false, more: false, long: false, stuck: false,
   vid: !NOAUTO, shown: false, snd: false, tkFail: false,
   W: WEEK, pv: false, days: WEEK.map(() => null), sel: 0, ready: false, f: [], now: false, all: false, t: hm(),
@@ -246,10 +247,11 @@ function pel() {
   async init() {
    const id = getQueryParam('id');
    const f = this.film = ((await loadJSON('data/films.json')).films || []).find(x => x.id === id && listed(x)) || null;
-   if (!f) { this.missing = true; document.title = 'Película no encontrada · Cine Colombia'; return; }
+   if (!f) { this.missing = true; ownTitle(); document.title = t('film.nf_title'); return; }
    this.$store.shell.cur = f.alt ? 'alternativo' : f.status;
-   const d = f.shortSynopsis || '', t = document.title = f.title + ' · Cine Colombia';
-   [['name=description', d], ['property="og:title"', t], ['property="og:description"', d], ['property="og:image"', f.backdrop || new URL(f.poster, location.href).href]]
+   ownTitle();
+   const d = f.shortSynopsis || '', ti = document.title = f.title + ' · Cine Colombia';
+   [['name=description', d], ['property="og:title"', ti], ['property="og:description"', d], ['property="og:image"', f.backdrop || new URL(f.poster, location.href).href]]
     .forEach(([k, v]) => { const m = document.querySelector('meta[' + k + ']'); if (m) m.content = v; });
    if (!f.youtubeKey && !f.verticalTrailer) this.vid = false;
    if (window.zombies && /resident evil/i.test(f.title)) this.$nextTick(() => zombies.start(this.$root.querySelector('.dcard'), 3000)); // easter egg
@@ -319,8 +321,8 @@ function pel() {
    if (n == null || n < 0 || n > 6) return;
    e.preventDefault(); this.pick(n); this.$nextTick(() => document.getElementById('d' + n).focus());
   },
-  onDay(i) { return { Hoy: 'hoy', Mañana: 'mañana' }[fmtDate(this.W[i]).label] || 'el ' + this.dl(i); }, // "No hay funciones mañana" / "el mar 14"
-  dl(i) { if (i < 0) return ''; const d = fmtDate(this.W[i]); return d.label.toLowerCase() + ' ' + d.day; },
+  onDay(i) { const k = WEEK.indexOf(this.W[i]); return k >= 0 && k < 2 ? fmtDate(this.W[i]).low : t('date.on', { day: this.dl(i) }); }, // "No hay funciones mañana" / "el mié 14"
+  dl(i) { if (i < 0) return ''; const d = fmtDate(this.W[i]); return d.low + ' ' + d.day; },
   get cn() { return (this.$store.city.cur || {}).name || ''; },
   get none() { return this.ready && this.days.every(d => d && !Object.keys(d).length); },
   get alt() { const a = this.W.map((x, k) => (this.ahead(k) ? k : -1)).filter(k => k >= 0 && k !== this.sel); return a.find(k => k > this.sel) ?? a.pop() ?? -1; },
@@ -334,7 +336,7 @@ function pel() {
     return c.sites.filter(m => day[m.id]).flatMap(m => day[m.id].filter(s => !s.soldOut && !this.past(s)).map(s => ({ s, m })))
       .sort((a, b) => (a.s.time < b.s.time ? -1 : 1)).slice(0, 3);
   },
-  rel(time) { const [h, m] = time.split(':'), [H, M] = this.t.split(':'), n = (h - H) * 60 + (m - M); return n >= 0 && n < 90 ? 'en ' + n + ' min' : ''; },
+  rel(time) { const [h, m] = time.split(':'), [H, M] = this.t.split(':'), n = (h - H) * 60 + (m - M); return n >= 0 && n < 90 ? t('st.in_min', { n }) : ''; },
   // attrs that split the day
   get chips() {
    const n = {}, r = this.raw;
@@ -351,10 +353,10 @@ function pel() {
    return c ? this.$store.geo.sort(c.sites.filter(s => day[s.id])).map(s => ({ s, times: day[s.id].filter(x => this.ok(x)) })).filter(g => g.times.length) : [];
   },
   get summary() {
-   const t = this.list.flatMap(g => g.times.map(s => s.time)).sort(), n = t.length;
-   return n ? ' multiplex · ' + n + (n > 1 ? ' funciones' : ' función') + ' · ' + (n > 1 ? 'desde ' + t[0] + ' hasta ' + t[n - 1] : 'a las ' + t[0]) : '';
+   const tm = this.list.flatMap(g => g.times.map(s => s.time)).sort(), n = tm.length;
+   return n ? ' multiplex · ' + t('st.n_shows', { n }) + ' · ' + (n > 1 ? t('st.range', { from: tm[0], to: tm[n - 1] }) : t('st.at', { time: tm[0] })) : '';
   },
-  tags(s) { return s.attrs.filter(a => a !== '2D').join(' · ') || '2D'; },
+  tags(s) { return s.attrs.filter(a => a !== '2D').map(attrLabel).join(' · ') || '2D'; },
   // same price lookup as boleta.js
   price(site, s) {
    const PR = this.PR, D = PR && PR._default, key = s.attrs.filter(a => !LANG.includes(a)).join(' ');
@@ -362,14 +364,14 @@ function pel() {
    const bands = (PR[site] || {})[key] || (Array.isArray(D) ? D : D && (D[key] || D['2D'])) || [];
    const b = bands.filter(x => x.from <= s.time).pop() || bands[0];
    const n = b && b.prices && b.prices.length ? Math.min(...b.prices.map(x => x.price)) : BASE[['Onyx', 'Imax', 'Megasala', 'Dinamix', '3D'].find(f => s.attrs.includes(f)) || '2D'];
-   return 'desde $ ' + n.toLocaleString('es-CO');
+   return t('st.from', { price: cop(n) });
   },
   // demo: ~1 in 5 "Pocas sillas" (boleta.js hash)
   low(s) { let x = 2166136261; for (const c of s.id + 'p') x = Math.imul(x ^ c.charCodeAt(0), 16777619); return !s.soldOut && !this.past(s) && (x >>> 0) % 5 === 0; },
-  km(s) { const k = this.$store.geo.d(s); return k == null ? '' : (this.$store.geo.pos.src === 'ip' ? 'aprox. ' : '') + fmtKm(k); },
+  km(s) { const k = this.$store.geo.d(s); return k == null ? '' : this.$store.geo.pos.src === 'ip' ? t('geo.ip_km', { km: fmtKm(k) }) : fmtKm(k); },
 
-  get section() { const f = this.film; return f.alt ? 'Alternativo' : { cartelera: 'Cartelera', preventa: 'Preventa', pronto: 'Pronto' }[f.status]; },
-  get vote() { return this.film.vote ? this.film.vote.toLocaleString('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' ★' : ''; },
+  get section() { const f = this.film; return t('sec.' + (f.alt ? 'alternativo' : f.status)); },
+  get vote() { return this.film.vote ? this.film.vote.toLocaleString(loc(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' ★' : ''; },
   // gallery: videos, then stills; lightbox = snap scroller + history entry
   get items() { const f = this.film; return f ? [...(f.videos || []).map(v => ({ v })), ...(f.gallery || []).map(src => ({ src }))] : []; },
   thumb(v) { return 'https://i.ytimg.com/vi/' + v.key + '/hqdefault.jpg'; },

@@ -6,9 +6,12 @@ const MAX = 8, HOLD = 420; // seats per order, hold time in s
 const CW = 24, RH = 28, TOP = 72; // SVG units: column, row pitch, screen band
 const FMTS = ['Onyx', 'Imax', 'Megasala', 'Dinamix', '3D'];
 const BASE = { '2D': 12000, '3D': 18000, Dinamix: 18000, Megasala: 24000, Imax: 24000, Onyx: 32000 };
-const METHODS = ['Tarjeta', 'PSE', 'Nequi', 'Tarjeta Cineco'];
-const cop = n => '$ ' + n.toLocaleString('es-CO');
-const and = a => new Intl.ListFormat('es', { type: 'conjunction' }).format(a);
+const METHODS = ['Tarjeta', 'PSE', 'Nequi', 'Tarjeta Cineco']; // state keeps these ids; payName() shows them (PSE, Nequi: brands)
+const payName = m => ({ Tarjeta: t('pay.card'), 'Tarjeta Cineco': t('pay.cineco') })[m] || m;
+const clsName = n => ({ 'Silla General': t('seat.general'), 'Silla Preferencial': t('seat.pref') })[n] || n; // prices.json seat classes
+const and = a => new Intl.ListFormat(loc(), { type: 'conjunction' }).format(a);
+const seatName = s => t('bol.seat', { row: s.row, seat: s.label });
+const seatAria = s => seatName(s) + (s.type === 'W' ? ', ' + t('bol.wheelchair_l') : s.type === 'C' ? ', ' + t('bol.companion_l') : '');
 const hash = s => { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
 function rng(a) { // mulberry32
   return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
@@ -95,31 +98,35 @@ function boleta() {
       this.film = this.t && films.find(f => f.id === this.filmId && listed(f)) || null;
       this.loading = false;
       if (!this.film) return void (this.err = 'nf');
-      const t = this.t;
-      document.title = 'Boletas · ' + this.film.title + ' · Cine Colombia';
-      this.fmt = FMTS.find(f => t.attrs.includes(f)) || '2D';
-      const [show, PR, menu] = await Promise.all([t.seats ? loadJSON('data/seats/shows/' + id + '.json') : {}, loadJSON('data/seats/prices.json'), loadJSON('data/food.json')]);
+      const sh = this.t;
+      ownTitle(); document.title = t('meta.title_bol_film', { film: this.film.title });
+      this.fmt = FMTS.find(f => sh.attrs.includes(f)) || '2D';
+      const [show, PR, menu] = await Promise.all([sh.seats ? loadJSON('data/seats/shows/' + id + '.json') : {}, loadJSON('data/seats/prices.json'), loadJSON('data/food.json')]);
       this.menu = Array.isArray(menu) ? menu : []; // only flagged shows have a captured file (no 404s)
-      const lay = t.layout || show.layout, L = lay ? await loadJSON('data/seats/layouts/' + lay + '.json') : {};
-      const sc = String(t.screen || show.screen || (lay || '').split('-')[1] || '');
-      this.sala = sc && (/^\d+$/.test(sc) ? 'Sala ' + sc : sc);
+      const lay = sh.layout || show.layout, L = lay ? await loadJSON('data/seats/layouts/' + lay + '.json') : {};
+      this.sala = String(sh.screen || show.screen || (lay || '').split('-')[1] || '').trim(); // "Sala 6", "6", "IMAX": localised in line
       // prices.json: site → format ("2D Dinamix": attrs minus language) → time bands; last band with from ≤ start.
-      const key = t.attrs.filter(a => !/^(DOB|SUB|ESP)$/.test(a)).join(' '), D = PR._default;
+      const key = sh.attrs.filter(a => !/^(DOB|SUB|ESP)$/.test(a)).join(' '), D = PR._default;
       const bands = (PR[site] || {})[key] || (Array.isArray(D) ? D : D && (D[key] || D['2D'])) || [];
-      const band = bands.filter(x => x.from <= t.time).pop() || bands[0];
+      const band = bands.filter(x => x.from <= sh.time).pop() || bands[0];
       this.prices = band && band.prices && band.prices.length ? band.prices : [{ name: 'Silla General', price: BASE[this.fmt] }];
       this.estimated = !(L.areas && L.areas.length);
       const P = plan(this.estimated ? GENERIC : L);
       const sold = !this.estimated && Array.isArray(show.sold) ? new Set(show.sold) : simulate(P, id);
-      if (t.soldOut) P.rows.forEach(r => r.seats.forEach(s => sold.add(s.id)));
+      if (sh.soldOut) P.rows.forEach(r => r.seats.forEach(s => sold.add(s.id)));
       history.replaceState({ step: 'seats' }, '');
       this.$nextTick(() => this.draw(P, sold));
       const R = rng(hash(id + 'v'));
       this.viewers = 6 + Math.floor(R() * 19);
-      if (t.soldOut) return void (this.err = 'sold');
+      if (sh.soldOut) return void (this.err = 'sold');
       this.sim(true);
       this.$watch('step', st => this.sim(st === 'seats' && !this.paid));
       addEventListener('pagehide', () => this.destroy());
+      addEventListener('langchange', () => { // the seat map is plain DOM, outside Alpine
+        const r = this.$refs.room; if (!r.firstChild) return;
+        r.querySelector('.scr').textContent = t('bol.screen'); r.querySelector('.hits').setAttribute('aria-label', t('bol.seats_l'));
+        S.forEach(s => s.btn.setAttribute('aria-label', seatAria(s)));
+      });
     },
 
     // Built once per layout; later changes only patch classes/attributes of one seat.
@@ -136,7 +143,7 @@ function boleta() {
           Object.assign(s, { cx, cy, sold: sold.has(s.id), cls: this.cls(s) });
           seats += `<path class="s${s.sold ? ' sold' : ''}" data-id="${s.id}" d="${glyph(s.type, cx, cy)}"/>`;
           hits += `<button type="button" data-id="${s.id}" tabindex="-1" style="left:${pct((s.x + 1) * CW, VW)};top:${pct(TOP + r.y * RH, VH)}"` +
-            ` aria-label="Fila ${s.row} silla ${s.label}${s.type === 'W' ? ', silla de ruedas' : s.type === 'C' ? ', acompañante' : ''}"${s.sold ? ' aria-disabled="true"' : ' aria-pressed="false"'}></button>`;
+            ` aria-label="${seatAria(s)}"${s.sold ? ' aria-disabled="true"' : ' aria-pressed="false"'}></button>`;
           S.set(s.id, s);
         });
       });
@@ -151,8 +158,8 @@ function boleta() {
 <linearGradient id="cone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".09"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
 <path class="cone" d="M${sx} 22Q${VW / 2} 8 ${ex} 22L${VW - 4} ${fy}H4z" fill="url(#cone)"/>
 <path class="floor" d="M4 ${TOP - 14}H${VW - 4}V${fy}H4zM4 ${fy}l6 6H${VW + 2}l-6 -6M${VW - 4} ${TOP - 14}l6 6V${fy + 6}"/>
-<path class="glow" d="M${sx} 22Q${VW / 2} 8 ${ex} 22"/><path class="glow g2" d="M${sx} 22Q${VW / 2} 8 ${ex} 22"/><path class="screen" d="M${sx} 22Q${VW / 2} 8 ${ex} 22"/><text class="scr" x="${VW / 2}" y="38">PANTALLA</text>
-<path class="tier" d="${tiers}"/><g class="rl">${labels}</g><g class="seats">${seats}</g><g class="tags"></g></svg><div class="hits" role="group" aria-label="Sillas">${hits}</div>`;
+<path class="glow" d="M${sx} 22Q${VW / 2} 8 ${ex} 22"/><path class="glow g2" d="M${sx} 22Q${VW / 2} 8 ${ex} 22"/><path class="screen" d="M${sx} 22Q${VW / 2} 8 ${ex} 22"/><text class="scr" x="${VW / 2}" y="38">${t('bol.screen')}</text>
+<path class="tier" d="${tiers}"/><g class="rl">${labels}</g><g class="seats">${seats}</g><g class="tags"></g></svg><div class="hits" role="group" aria-label="${t('bol.seats_l')}">${hits}</div>`;
       svg = el.firstChild; lit = svg.querySelector('#lit');
       el.querySelectorAll('.hits button').forEach(b => { const s = S.get(b.dataset.id); s.btn = b; s.el = svg.querySelector(`[data-id="${s.id}"]`); });
       this.rove([...S.values()].find(s => !s.sold) || S.values().next().value);
@@ -269,10 +276,10 @@ function boleta() {
       this.rove(s);
       const m = s.mates, on = this.sel.includes(s.id);
       if (on) this.sel = this.sel.filter(id => !m.some(o => o.id === id));
-      else if (this.sel.length + m.length > MAX) return toast('Puedes elegir hasta ' + MAX + ' sillas por compra');
+      else if (this.sel.length + m.length > MAX) return toast(t('toast.max_seats', { n: MAX }));
       else this.sel = [...this.sel, ...m.map(o => o.id)];
       m.forEach(o => this.paint(o));
-      if (m.length > 1 && !on) toast('Silla doble: ' + and(m.map(o => 'Fila ' + o.row + ' ' + o.label)));
+      if (m.length > 1 && !on) toast(t('toast.double', { seats: and(m.map(seatName)) }));
       if (this.sel.length && !tickT) this.hold();
       if (!this.sel.length) this.stopHold();
     },
@@ -280,7 +287,7 @@ function boleta() {
     // Other buyers (simulated): first 1.5 s after the room renders, then every 5-10 s, one to three neighbouring free seats are taken. Never the user's.
     sim(on) {
       clearTimeout(fomoT); clearInterval(viewT); fomoT = viewT = null;
-      if (!on) { const t = document.getElementById('toast'); if (t && /tomar la fila/.test(t.textContent)) t.classList.remove('on'); return; }
+      if (!on) { const el = document.getElementById('toast'); if (el && el.dataset.sim) el.classList.remove('on'); return; }
       viewT = setInterval(() => { this.viewers = Math.min(40, Math.max(3, this.viewers + (Math.random() < 0.5 ? -1 : 1))); }, 7000);
       this.fomo(true);
     },
@@ -303,27 +310,27 @@ function boleta() {
       if (!got.length) return;
       got.forEach(o => { o.sold = true; this.paint(o); if (!RM) { o.el.classList.add('taking'); setTimeout(() => o.el.classList.remove('taking'), 800); } });
       this.free -= got.length;
-      toast('Alguien acaba de tomar la fila ' + a.row + ' ' + and(got.map(o => o.label).sort((p, q) => parseInt(p) - parseInt(q))), null, 3200);
+      toast(t('toast.taken', { row: a.row, seats: and(got.map(o => o.label).sort((p, q) => parseInt(p) - parseInt(q))) }), null, 3200); toastEl.dataset.sim = 1;
     },
     get scarce() { return this.free > 0 && this.free < this.total0 * 0.15; },
 
     hold() {
       this.left = HOLD;
-      tickT = setInterval(() => { if (--this.left <= 0) this.expire(); else if (this.left === 60) toast('Queda 1 minuto para terminar tu compra; luego liberamos tus sillas.', null, 6000); }, 1000);
+      tickT = setInterval(() => { if (--this.left <= 0) this.expire(); else if (this.left === 60) toast(t('toast.hold_1min'), null, 6000); }, 1000);
     },
     stopHold() { clearInterval(tickT); tickT = null; this.left = 0; },
     expire() {
       this.stopHold();
       const was = this.sel.map(id => S.get(id)); this.sel = []; was.forEach(s => this.paint(s));
       if (this.step !== 'seats') { this.step = 'seats'; history.replaceState({ step: 'seats' }, ''); }
-      toast('Se acabó el tiempo y liberamos tus sillas. Puedes elegirlas de nuevo.', null, 5000);
+      toast(t('toast.hold_expired'), null, 5000);
     },
     get mmss() { return Math.floor(this.left / 60) + ':' + String(this.left % 60).padStart(2, '0'); },
 
     get chosen() { return this.sel.map(id => S.get(id)).filter(Boolean).sort((a, b) => a.cy - b.cy || parseInt(a.label) - parseInt(b.label)); },
     get seatText() {
       const by = {}; this.chosen.forEach(s => (by[s.row] = by[s.row] || []).push(s.label));
-      return Object.keys(by).map(r => 'Fila ' + r + ' ' + by[r].join(', ')).join(' · ');
+      return Object.keys(by).map(r => t('bol.seat', { row: r, seat: by[r].join(', ') })).join(' · ');
     },
     // Seat class price: area cat, else Preferencial/General by name, else first.
     cls(s) {
@@ -348,11 +355,11 @@ function boleta() {
     get foodTotal() { return this.foodLines.reduce((a, l) => a + l.qty * l.price, 0); },
     get sbarText() {
       const n = this.sel.length, m = this.foodCount;
-      if (!n) return 'Elige una silla libre para empezar';
-      return m ? n + (n === 1 ? ' boleta · ' : ' boletas · ') + m + (m === 1 ? ' producto' : ' productos') : n + (n === 1 ? ' silla' : ' sillas') + ' · ' + this.seatText;
+      if (!n) return t('bol.pick_seat');
+      return m ? t('bol.n_tickets', { n }) + ' · ' + t('bol.n_items', { n: m }) : t('bol.n_seats', { n }) + ' · ' + this.seatText;
     },
     get when() { if (!this.date) return ''; const d = fmtDate(this.date); return d.label + ' ' + d.day; },
-    get line() { return [this.site && this.site.name, this.sala, this.when, this.t && this.t.time, this.t && this.t.attrs.filter(x => x.toLowerCase() !== String(this.sala).toLowerCase()).join(' · ')].filter(Boolean).join(' · '); },
+    get line() { const sc = this.sala; return [this.site && this.site.name, /^\d+$/.test(sc) ? t('bol.room') + ' ' + sc : sc.replace(/^Sala\b/, t('bol.room')), this.when, this.t && this.t.time, this.t && this.t.attrs.filter(x => x.toLowerCase() !== sc.toLowerCase()).map(attrShort).join(' · ')].filter(Boolean).join(' · '); },
 
     go(step) {
       if (step === 'tickets' && !this.sel.length) return;

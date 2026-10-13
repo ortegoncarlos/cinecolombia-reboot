@@ -64,6 +64,18 @@ h1,h2,h3,p{margin:0}
 .sheet::before{content:"";display:block;width:36px;height:4px;margin:0 auto 14px;border-radius:2px;background:rgba(255,255,255,.28)}
 .sheet h2{font-size:20px;font-weight:700;margin-bottom:4px}
 .sheet ul{list-style:none;margin:0;padding:0}
+html:not(.rdy) body{visibility:hidden} /* until the language dictionary is in and Alpine has rendered (app.js) */
+.sheet .sheet-l{font-size:13px;font-weight:500;color:var(--fg-3)}
+.chips.langs{flex-wrap:wrap;gap:6px;overflow:visible;margin:8px 0 18px;padding:0}
+.chips.langs button{min-height:40px;padding:0 8px;font-size:13px}
+.chips.langs [aria-checked=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.lmenu{position:relative;flex:none}
+.lbtn{position:relative}
+.lbadge{position:absolute;right:0;top:2px;min-width:17px;padding:0 3px;border-radius:6px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;line-height:13px;text-align:center;pointer-events:none}
+.lpop{position:absolute;right:0;top:calc(100% + 6px);z-index:50;display:flex;flex-direction:column;gap:4px;min-width:150px;padding:6px;border-radius:var(--r-m);background:var(--navy-deep);box-shadow:0 0 0 1px var(--line),0 12px 32px rgba(0,0,0,.5)}
+.lpop button{min-height:44px;padding:0 14px;border-radius:var(--r-s);text-align:left;font-size:15px;font-weight:500;color:var(--fg-2)}
+.lpop button:focus-visible{outline-offset:-2px}
+.lpop [aria-checked=true]{background:var(--accent);color:#fff}
 .city-row{width:calc(100% + 16px);margin:0 -8px;padding:0 8px;min-height:52px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-radius:var(--r-s);box-shadow:inset 0 -1px var(--line);font-size:16px;font-weight:500;text-align:left}
 .city-row:active{background:rgba(255,255,255,.08)}
 .city-row:focus-visible{outline-offset:-2px}

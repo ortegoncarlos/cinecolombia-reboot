@@ -34,7 +34,7 @@ async function open({ sound = null, desktop = false, reject = 0 } = {}) {
   const ctx = await browser.newContext(desktop ? { viewport: { width: 1440, height: 900 } } : IPHONE);
   await ctx.addInitScript(([s, reject]) => {
     window.__calls = []; window.__reject = reject; // reject: how many play() calls fail with NotAllowedError first
-    try { localStorage.setItem('cineco.city', 'bogota'); localStorage.setItem('cineco.geo', '{"lat":4.65,"lng":-74.05}'); if (s != null) localStorage.setItem('cineco.sound', s); } catch (e) {}
+    try { localStorage.setItem('cineco.lang', 'es'); localStorage.setItem('cineco.city', 'bogota'); localStorage.setItem('cineco.geo', '{"lat":4.65,"lng":-74.05}'); if (s != null) localStorage.setItem('cineco.sound', s); } catch (e) {}
     const P = HTMLMediaElement.prototype, who = v => [...document.querySelectorAll('.clip')].indexOf(v);
     const fire = (v, t) => setTimeout(() => v.dispatchEvent(new Event(t)), 5);
     Object.defineProperty(P, 'paused', { get() { return this.__paused !== false; } });

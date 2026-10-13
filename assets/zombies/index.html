@@ -49,7 +49,7 @@ for (let k = 0, t = 0; t < 4; k++, t += F) {
   tl.set('.ll', { y: k % 2 ? -1 : 0 }, t); tl.set('.lr', { y: k % 2 ? 0 : -1 }, t);
   tl.set('.ar', { y: k % 2 ? 1 : 0 }, t); tl.set('.hd', { x: k % 4 < 2 ? 0 : 1 }, t);
 }
-tl.fromTo('#kill', { x: 120, y: 160 }, { x: 160, y: 160, duration: END, ease: 'none' }, 0);
+tl.fromTo('#kill', { x: 170, y: 160 }, { x: 130, y: 160, duration: END, ease: 'none' }, 0);
 tl.set('#kill .zs', { filter: 'brightness(.6) sepia(1) saturate(20) hue-rotate(-40deg)', transformOrigin: '50% 60%' }, END); // red flash
 tl.to('#kill .zs', { scale: 1.1, duration: 0.07 }, END);
 tl.to('#kill .zs', { scale: 1.25, opacity: 0, duration: 0.17, ease: 'power2.out' }, END + 0.07);

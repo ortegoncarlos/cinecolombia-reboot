@@ -108,7 +108,7 @@ window.zombies = (() => {
       e.stopPropagation(); swallow = performance.now() + 500;
       z.dead = performance.now(); kills++; chip();
       if (navigator.vibrate) try { navigator.vibrate(25); } catch (x) {}
-      if (kills === 10) { let seen; try { seen = sessionStorage.getItem('cineco.zombies'); sessionStorage.setItem('cineco.zombies', '1'); } catch (x) {} if (!seen && typeof toast === 'function') toast('Sobreviviste… por ahora. Resident Evil, en cines.'); }
+      if (kills === 10) { let seen; try { seen = sessionStorage.getItem('cineco.zombies'); sessionStorage.setItem('cineco.zombies', '1'); } catch (x) {} if (!seen && typeof toast === 'function') toast(window.t('zombies.toast')); }
       return;
     }
   }

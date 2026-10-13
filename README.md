@@ -25,6 +25,10 @@ Preventa films that open after 17 October have no real showtimes yet, so their r
 
 The Confitería step of the ticket flow reads `data/food.json`: the menu (names, descriptions, prices) and product photos (`media/food/`, resized) come from Cine Colombia's public food page, Confitería tab, with prices as of 12 Oct 2026.
 
+## Idiomas
+
+The UI speaks Spanish (default and source), English, French, Portuguese (Brazil) and Chinese (Simplified). The language comes from `?lang=xx` (which is also saved), else the choice saved from the city sheet's language chips (`localStorage cineco.lang`), else the browser's `navigator.languages`, else Spanish. Strings live in flat dictionaries `data/i18n/{es,en,fr,pt,zh}.json`; markup uses `$t('key')` (Alpine) or `data-i18n="key"` / `data-i18n-a="attr:key"` (static), JS uses `t('key', { n })` with `{var}` interpolation and `key_one` / `key_other` plurals; a missing key falls back to Spanish, then to the key. Dates, prices (COP) and distances are formatted with `Intl` for the active locale (`LOCALE` in `assets/app.js`). Data (titles, synopses, cities, menu items) is not translated; genres, formats, food groups, seat classes and payment methods are. To add a language: copy `es.json` to `xx.json`, translate the values, and add `xx` to `LOCALE` and `LANGS` in `assets/app.js`; `npm test` (`tests/i18n.mjs`) checks that no key is missing.
+
 ## Promos
 
 Promo cards in the Cartelera feed come from `data/promos.json`: `after: n` places the card after the n-th film; `clip` (and `vertical`) point to the self-hosted video in `media/trailers/` like a film's. Edit that file to add, move or remove promos.
@@ -43,7 +47,7 @@ The demo can record sessions with [Smartlook](https://www.smartlook.com/) for th
 
 ## Pruebas
 
-`npm i && npm test` corre `tests/feed-player.mjs`: 13 casos del reproductor del feed (arranque silenciado de la primera tarjeta, precarga en la dirección del swipe e intercambio de roles, Sonido y desbloqueo de ambos elementos, preferencia guardada, tarjetas sin clip, `play()` rechazado y ▶, pestaña oculta, atenuado, pantalla completa, escritorio) con `HTMLMediaElement` simulado en Chrome (emulación iPhone 13), sin red. `ONLY=4 npm test` corre un caso. El diseño y las mediciones en el iPhone están en `docs/auditoria-player.md`. Necesita Google Chrome instalado; el sitio en sí sigue sin dependencias.
+`npm i && npm test` corre `tests/i18n.mjs` (diccionarios completos, claves usadas en el HTML/JS, y las cuatro páginas en los cinco idiomas) y `tests/feed-player.mjs`: 13 casos del reproductor del feed (arranque silenciado de la primera tarjeta, precarga en la dirección del swipe e intercambio de roles, Sonido y desbloqueo de ambos elementos, preferencia guardada, tarjetas sin clip, `play()` rechazado y ▶, pestaña oculta, atenuado, pantalla completa, escritorio) con `HTMLMediaElement` simulado en Chrome (emulación iPhone 13), sin red. `ONLY=4 npm test` corre un caso. El diseño y las mediciones en el iPhone están en `docs/auditoria-player.md`. Necesita Google Chrome instalado; el sitio en sí sigue sin dependencias.
 
 ## Publicar
 

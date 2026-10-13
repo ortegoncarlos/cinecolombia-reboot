@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Cine Colombia · Cartelera</title>
-<meta name="description" content="Cartelera, preventa y próximos estrenos de Cine Colombia. Ver horarios y comprar boletas.">
+<title data-i18n="meta.title_feed">Cine Colombia · Cartelera</title>
+<meta name="description" data-i18n-a="content:meta.desc_feed" content="Cartelera, preventa y próximos estrenos de Cine Colombia. Ver horarios y comprar boletas.">
 <meta property="og:site_name" content="Cine Colombia"><meta property="og:type" content="website"><meta property="og:locale" content="es_CO">
 <meta property="og:title" content="Cine Colombia · Cartelera, horarios y boletas"><meta property="og:description" content="Cartelera, preventa y próximos estrenos de Cine Colombia. Ver horarios y comprar boletas."><meta property="og:url" content="https://ortegoncarlos.github.io/cinecolombia-reboot/">
 <meta property="og:image" content="https://ortegoncarlos.github.io/cinecolombia-reboot/assets/og.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
@@ -16,6 +16,7 @@
 <link rel="preconnect" href="https://www.youtube-nocookie.com">
 <link rel="preload" href="data/films.json" as="fetch" crossorigin>
 <link rel="preload" href="data/cities.json" as="fetch" crossorigin>
+<link rel="preload" href="data/i18n/es.json" as="fetch" crossorigin>
 <link rel="stylesheet" href="assets/app.css">
 <script src="assets/app.js" defer></script>
 <script src="assets/zombies.js" defer></script>
@@ -23,26 +24,27 @@
 </head>
 <body>
 <div x-data="feed()" :class="dim && !searching && !$store.city.open && 'dim'" @pointerdown="wake()" @focusin="wake()">
-  <h1 class="sr">Cine Colombia: cartelera, preventa y estrenos</h1>
+  <h1 class="sr" data-i18n="feed.h1">Cine Colombia: cartelera, preventa y estrenos</h1>
   <header class="top" x-ref="top">
     <div class="bar">
       <img class="logo" src="assets/logo-blanco.png" alt="Cine Colombia" width="108" height="28">
-      <button class="pill" @click="$store.city.open = true" :aria-label="'Elige tu ciudad' + ($store.city.cur ? ', actual ' + $store.city.cur.name : '')">
-        <span x-text="$store.city.cur ? $store.city.cur.name : 'Elige tu ciudad'">Elige tu ciudad</span>
+      <button class="pill" @click="$store.city.open = true" :aria-label="cityAria()">
+        <span x-text="cityName()"></span>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
       </button>
-      <button class="icon-btn" x-ref="sb" aria-label="Buscar" @click="browse(true)">
+      <button class="icon-btn" x-ref="sb" :aria-label="$t('search.open')" @click="browse(true)">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
+      <span data-lang></span>
     </div>
-    <nav class="tabs" role="tablist" aria-label="Secciones" @keydown="tabKeys($event)">
+    <nav class="tabs" role="tablist" :aria-label="$t('feed.sections')" @keydown="tabKeys($event)">
       <template x-for="t in Object.keys(SECTIONS)" :key="t">
-        <button role="tab" :aria-selected="tab === t" :tabindex="tab === t ? 0 : -1" @click="tab === t ? build() : tab = t; $el.scrollIntoView({ inline: 'nearest' })" x-text="SECTIONS[t][0]"></button>
+        <button role="tab" :aria-selected="tab === t" :tabindex="tab === t ? 0 : -1" @click="tab === t ? build() : tab = t; $el.scrollIntoView({ inline: 'nearest' })" x-text="$t('sec.' + t)"></button>
       </template>
     </nav>
   </header>
 
-  <main class="feed" x-ref="feed" aria-label="Películas" @scroll.passive="wake()">
+  <main class="feed" x-ref="feed" :aria-label="$t('feed.films')" @scroll.passive="wake()">
     <!-- the two players: first children of the scroll container, placed over a card's media box (place()) so they scroll with
          it; one plays the active card, the other preloads the next clip; roles swap on activation -->
     <video class="clip" x-ref="v0" :class="playing && vid().n === 0 && 'on'" playsinline muted loop preload="auto" tabindex="-1" aria-hidden="true"></video>
@@ -62,16 +64,16 @@
                 <img class="fb-poster" :loading="i ? 'lazy' : 'eager'" :fetchpriority="i ? 'auto' : 'high'" decoding="async" width="500" height="750" :src="imgSize(it.f.poster, 'w500')" alt="">
               </div>
             </template>
-            <button class="disc big" x-show="i === active && wait === 1" @click="tapPlay()" aria-label="Reproducir"><svg viewBox="0 0 24 24"><path d="M7 4.5v15L19.5 12z"/></svg></button>
+            <button class="disc big" x-show="i === active && wait === 1" @click="tapPlay()" :aria-label="$t('feed.play')"><svg viewBox="0 0 24 24"><path d="M7 4.5v15L19.5 12z"/></svg></button>
           </div>
           <div class="scrim"></div>
           <div class="info">
             <div class="chiprow" x-show="heroImg(it.f) || filmTag(it.f) || it.f.releaseDate > TODAY">
               <img class="poster-chip" x-show="heroImg(it.f)" loading="lazy" decoding="async" width="56" height="84" :src="imgSize(it.f.poster, 'w185')" alt="">
               <div>
-                <span class="kicker" x-show="it.f.featured">Destacado</span>
+                <span class="kicker" x-show="it.f.featured" x-text="$t('tag.featured')"></span>
                 <span class="tag" x-show="filmTag(it.f)" x-text="filmTag(it.f)"></span>
-                <span class="kicker" x-show="it.f.releaseDate > TODAY" x-text="'Estreno ' + fmtRelease(it.f.releaseDate, true)"></span>
+                <span class="kicker" x-show="it.f.releaseDate > TODAY" x-text="$t('tag.opens', { date: fmtRelease(it.f.releaseDate, true) })"></span>
               </div>
             </div>
             <span class="kicker" x-show="it.f.alt" x-text="altLabel(it.f)"></span>
@@ -80,69 +82,69 @@
             <div class="meta"><span class="rate" x-show="rateLabel(it.f.rating)" x-text="rateLabel(it.f.rating)"></span><span x-text="metaLine(it.f)"></span></div>
             <div class="attrs"><template x-for="a in it.f.attributes.slice(0, 4)" :key="a"><span class="attr" x-text="attrLabel(a)"></span></template></div>
             <a class="btn" :href="'pelicula.html?id=' + it.f.id">
-              <span x-text="it.f.status === 'pronto' ? 'Ver detalles' : 'Ver horarios'"></span>
+              <span x-text="$t(it.f.status === 'pronto' ? 'feed.details' : 'feed.showtimes')"></span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </a>
           </div>
           <div class="rail">
-            <button x-show="i === active && playing" @click="toggleSound()" :aria-pressed="snd + ''" aria-label="Sonido">
-              <span class="disc"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path x-show="!snd" d="M17 9l4 6M21 9l-4 6"/><path x-show="snd" d="M17 8a5 5 0 0 1 0 8"/></svg></span>Sonido</button>
-            <button x-show="i === active && clip(i)" @click="fsOn()" aria-label="Pantalla completa">
-              <span class="disc"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></span>Pantalla</button>
-            <button @click="shareFilm(it.f)" aria-label="Compartir">
-              <span class="disc"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></span>Compartir</button>
+            <button x-show="i === active && playing" @click="toggleSound()" :aria-pressed="snd + ''" :aria-label="$t('feed.sound')">
+              <span class="disc"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path x-show="!snd" d="M17 9l4 6M21 9l-4 6"/><path x-show="snd" d="M17 8a5 5 0 0 1 0 8"/></svg></span><span x-text="$t('feed.sound')"></span></button>
+            <button x-show="i === active && clip(i)" @click="fsOn()" :aria-label="$t('feed.fullscreen')">
+              <span class="disc"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></span><span x-text="$t('feed.fullscreen_s')"></span></button>
+            <button @click="shareFilm(it.f)" :aria-label="$t('share')">
+              <span class="disc"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></span><span x-text="$t('share')"></span></button>
           </div>
         </div></template>
 
         <template x-if="it.p"><div style="display:contents">
           <div class="media">
             <template x-if="it.p.poster"><img class="bd" loading="lazy" decoding="async" width="720" height="1280" :src="it.p.poster" alt=""></template>
-            <button class="disc big" x-show="i === active && wait === 1" @click="tapPlay()" aria-label="Reproducir"><svg viewBox="0 0 24 24"><path d="M7 4.5v15L19.5 12z"/></svg></button>
+            <button class="disc big" x-show="i === active && wait === 1" @click="tapPlay()" :aria-label="$t('feed.play')"><svg viewBox="0 0 24 24"><path d="M7 4.5v15L19.5 12z"/></svg></button>
           </div>
           <div class="scrim"></div>
           <div class="info">
             <span class="kicker" x-text="(it.p.type === 'tiktok' ? 'TikTok · ' : '') + (it.p.author || '')"></span>
             <h2 class="title" x-text="it.p.title"></h2>
-            <a class="btn sec2" :href="it.p.url" target="_blank" rel="noopener" x-text="it.p.type === 'tiktok' ? 'Ver en TikTok' : 'Ver más'"></a>
+            <a class="btn sec2" :href="it.p.url" target="_blank" rel="noopener" x-text="$t(it.p.type === 'tiktok' ? 'feed.on_tiktok' : 'feed.more')"></a>
           </div>
           <div class="rail">
-            <button x-show="i === active && playing" @click="toggleSound()" :aria-pressed="snd + ''" aria-label="Sonido">
-              <span class="disc"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path x-show="!snd" d="M17 9l4 6M21 9l-4 6"/><path x-show="snd" d="M17 8a5 5 0 0 1 0 8"/></svg></span>Sonido</button>
-            <button @click="shareFilm(it.p, it.p.url)" aria-label="Compartir">
-              <span class="disc"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></span>Compartir</button>
+            <button x-show="i === active && playing" @click="toggleSound()" :aria-pressed="snd + ''" :aria-label="$t('feed.sound')">
+              <span class="disc"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path x-show="!snd" d="M17 9l4 6M21 9l-4 6"/><path x-show="snd" d="M17 8a5 5 0 0 1 0 8"/></svg></span><span x-text="$t('feed.sound')"></span></button>
+            <button @click="shareFilm(it.p, it.p.url)" :aria-label="$t('share')">
+              <span class="disc"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></span><span x-text="$t('share')"></span></button>
           </div>
         </div></template>
 
         <template x-if="it.type === 'div'">
           <div style="display:contents">
-            <span class="sec">A continuación</span>
-            <h2 x-text="it.title"></h2>
-            <p x-text="it.text"></p>
-            <span class="count" x-text="it.count + (it.count === 1 ? ' película' : ' películas')"></span>
+            <span class="sec" x-text="$t('feed.up_next')"></span>
+            <h2 x-text="$t('sec.' + it.sec)"></h2>
+            <p x-text="$t('sec.' + it.sec + '_d')"></p>
+            <span class="count" x-text="$t('feed.n_films', { n: it.count })"></span>
           </div>
         </template>
         <template x-if="it.type === 'empty'">
           <div style="display:contents">
             <h2 x-text="emptyText()[0]"></h2>
             <p x-text="emptyText()[1]"></p>
-            <button class="btn" @click="$store.city.open = true">Cambiar ciudad</button>
+            <button class="btn" @click="$store.city.open = true" x-text="$t('city.change')"></button>
           </div>
         </template>
         <template x-if="it.type === 'end'">
           <div style="display:contents">
-            <h2>Eso es todo por hoy</h2>
-            <p>Ya viste toda la cartelera. Vuelve pronto: cada jueves hay estrenos.</p>
-            <button class="btn" @click="top()">Volver arriba</button>
+            <h2 x-text="$t('feed.end_t')"></h2>
+            <p x-text="$t('feed.end_d')"></p>
+            <button class="btn" @click="top()" x-text="$t('feed.top')"></button>
           </div>
         </template>
 
-        <p class="next" x-show="it.type !== 'end' && next(i)" aria-hidden="true">Siguiente · <b x-text="next(i)"></b></p>
+        <p class="next" x-show="it.type !== 'end' && next(i)" aria-hidden="true"><span x-text="$t('feed.next')"></span> · <b x-text="next(i)"></b></p>
       </article>
     </template>
     <!-- desktop only: next-up rail beside the stage (current card + the following ones) -->
     <template x-if="desk">
-      <aside class="up" aria-label="A continuación">
-        <p class="sec">A continuación</p>
+      <aside class="up" :aria-label="$t('feed.up_next')">
+        <p class="sec" x-text="$t('feed.up_next')"></p>
         <ol>
           <template x-for="(it, k) in queue.slice(upFrom, upFrom + 6)" :key="gen + it.key">
             <li><button class="up-i" :class="{ on: upFrom + k === active }" :aria-current="(upFrom + k === active) + ''" @click="go(upFrom + k)">
@@ -152,20 +154,20 @@
             </button></li>
           </template>
         </ol>
-        <p class="up-k" aria-hidden="true"><kbd>↑</kbd><kbd>↓</kbd> o la rueda del mouse para cambiar</p>
+        <p class="up-k" aria-hidden="true"><kbd>↑</kbd><kbd>↓</kbd> <span x-text="$t('feed.wheel')"></span></p>
       </aside>
     </template>
     <!-- ponytail: finite catalog, the "infinite" feed ends on an end card instead of looping -->
     <div class="sentinel" x-ref="sentinel"></div>
   </main>
-  <div class="browse" x-show="searching" x-cloak role="dialog" aria-modal="true" aria-label="Buscar películas" @keydown.escape="close()">
+  <div class="browse" x-show="searching" x-cloak role="dialog" aria-modal="true" :aria-label="$t('search.title')" @keydown.escape="close()">
     <div class="bar">
-      <input class="search" type="search" x-ref="q" x-model.debounce.150ms="q" placeholder="Buscar película…" aria-label="Buscar película">
-      <button class="icon-btn" @click="close()" aria-label="Cerrar búsqueda"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <input class="search" type="search" x-ref="q" x-model.debounce.150ms="q" :placeholder="$t('search.ph')" :aria-label="$t('search.input')">
+      <button class="icon-btn" @click="close()" :aria-label="$t('search.close')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
-    <div class="chips" role="tablist" aria-label="Sección" @keydown="tabKeys($event)">
+    <div class="chips" role="tablist" :aria-label="$t('search.section')" @keydown="tabKeys($event)">
       <template x-for="s in ['todas', ...Object.keys(SECTIONS)]" :key="s">
-        <button role="tab" :aria-selected="bsec === s" :tabindex="bsec === s ? 0 : -1" @click="bsec = s" x-text="s === 'todas' ? 'Todas' : SECTIONS[s][0]"></button>
+        <button role="tab" :aria-selected="bsec === s" :tabindex="bsec === s ? 0 : -1" @click="bsec = s" x-text="$t(s === 'todas' ? 'search.all' : 'sec.' + s)"></button>
       </template>
     </div>
     <div class="grid">
@@ -173,12 +175,12 @@
         <a class="tile" :href="'pelicula.html?id=' + f.id"><img loading="lazy" decoding="async" width="110" height="165" :src="imgSize(f.poster, desk ? 'w342' : 'w185')" alt=""><span class="tag" x-show="filmTag(f)" x-text="filmTag(f)"></span><span x-text="f.title"></span></a>
       </template>
     </div>
-    <p class="empty" x-show="!results.length">Sin resultados</p>
+    <p class="empty" x-show="!results.length" x-text="$t('search.none')"></p>
   </div>
 </div>
 
-<nav class="tabbar" aria-label="Principal">
-  <a href="index.html" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 4v5M16 4v5"/></svg>Cartelera</a>
+<nav class="tabbar" aria-label="Principal" data-i18n-a="aria-label:nav.main">
+  <a href="index.html" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 4v5M16 4v5"/></svg><span data-i18n="nav.cartelera">Cartelera</span></a>
   <a href="multiplex.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Multiplex</a>
 </nav>
 </body>

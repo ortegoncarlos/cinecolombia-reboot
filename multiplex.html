@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Multiplex · Cine Colombia</title>
-<meta name="description" content="Multiplex de Cine Colombia en tu ciudad: dirección, cómo llegar y funciones.">
+<title data-i18n="meta.title_mx">Multiplex · Cine Colombia</title>
+<meta name="description" data-i18n-a="content:meta.desc_mx" content="Multiplex de Cine Colombia en tu ciudad: dirección, cómo llegar y funciones.">
 <meta property="og:site_name" content="Cine Colombia"><meta property="og:type" content="website"><meta property="og:locale" content="es_CO">
 <meta property="og:title" content="Multiplex Cine Colombia"><meta property="og:description" content="Multiplex de Cine Colombia en tu ciudad: dirección, cómo llegar y funciones."><meta property="og:url" content="https://ortegoncarlos.github.io/cinecolombia-reboot/multiplex.html">
 <meta property="og:image" content="https://ortegoncarlos.github.io/cinecolombia-reboot/assets/og.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://image.tmdb.org">
 <link rel="preload" href="data/cities.json" as="fetch" crossorigin>
+<link rel="preload" href="data/i18n/es.json" as="fetch" crossorigin>
 <link rel="stylesheet" href="assets/app.css">
 <link rel="stylesheet" href="assets/multiplex.css">
 <script src="assets/app.js" defer></script>
@@ -24,28 +25,29 @@
   <div class="amb" aria-hidden="true" x-show="bg.length"><template x-for="b in bg" :key="b"><img :src="imgSize(b, innerWidth < 768 ? 'w300' : 'w780')" alt=""></template></div>
   <div class="bar">
     <a href="index.html" class="logo-link"><img class="logo" src="assets/logo-blanco.png" alt="Cine Colombia" width="108" height="28"></a>
-    <button class="pill" x-show="!id" @click="$store.city.open = true" :aria-label="'Elige tu ciudad' + ($store.city.cur ? ', actual ' + $store.city.cur.name : '')">
-      <span x-text="$store.city.cur ? $store.city.cur.name : 'Elige tu ciudad'">Elige tu ciudad</span>
+    <button class="pill" x-show="!id" @click="$store.city.open = true" :aria-label="cityAria()">
+      <span x-text="cityName()"></span>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
     </button>
+    <span data-lang></span>
   </div>
 
   <template x-if="!id">
     <div style="display:contents">
-      <h1 class="lh" x-text="'Multiplex en ' + ($store.city.cur ? $store.city.cur.name : 'tu ciudad')">Multiplex</h1>
-      <button class="pill ghost" style="align-self:flex-start" x-show="$store.city.cur && $store.city.cur.sites.length > 1 && !$store.geo.pos" @click="$store.geo.ask()" x-text="$store.geo.busy ? 'Buscando…' : 'Ordenar por cercanía'"></button>
+      <h1 class="lh" x-text="$t('mx.in', { city: $store.city.cur ? $store.city.cur.name : $t('mx.your_city') })">Multiplex</h1>
+      <button class="pill ghost" style="align-self:flex-start" x-show="$store.city.cur && $store.city.cur.sites.length > 1 && !$store.geo.pos" @click="$store.geo.ask()" x-text="$t($store.geo.busy ? 'geo.busy' : 'geo.sort')"></button>
       <ul class="sl">
         <template x-for="s in sites" :key="s.id">
           <li>
             <a class="sl-main" :href="'multiplex.html?id=' + s.id">
               <span><b x-text="s.name"></b><small x-text="addr(s).street"></small><small class="sl-n" x-show="lday >= 0" x-text="lsub(s)"></small></span>
-              <span class="sl-go"><small x-show="$store.geo.km(s)" x-text="$store.geo.km(s)"></small><span class="sl-l">Ver funciones</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
+              <span class="sl-go"><small x-show="$store.geo.km(s)" x-text="$store.geo.km(s)"></small><span class="sl-l" x-text="$t('mx.see_shows')"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span>
             </a>
             <div class="strip" x-show="(lmap[s.id] || []).length">
               <template x-for="(f, j) in (lmap[s.id] || []).slice(0, 12)" :key="f.id">
-                <a class="tile" :data-more="j === 5 && lmap[s.id].length > 6 ? '+' + (lmap[s.id].length - 5) : null" :href="'multiplex.html?id=' + s.id + '&film=' + f.id" :aria-label="'Funciones de ' + f.title + (f.tag ? ', ' + f.tag.toLowerCase() : '')"><img loading="lazy" decoding="async" width="84" height="126" :src="f.p" alt=""><i x-show="f.tag"></i></a>
+                <a class="tile" :data-more="j === 5 && lmap[s.id].length > 6 ? '+' + (lmap[s.id].length - 5) : null" :href="'multiplex.html?id=' + s.id + '&film=' + f.id" :aria-label="$t('mx.shows_of', { title: f.title }) + (f.tag ? ', ' + f.tag.toLowerCase() : '')"><img loading="lazy" decoding="async" width="84" height="126" :src="f.p" alt=""><i x-show="f.tag"></i></a>
               </template>
-              <a class="tile more" x-show="(lmap[s.id] || []).length > 12" :href="'multiplex.html?id=' + s.id" x-text="'+' + ((lmap[s.id] || []).length - 12) + ' más'"></a>
+              <a class="tile more" x-show="(lmap[s.id] || []).length > 12" :href="'multiplex.html?id=' + s.id" x-text="$t('mx.more', { n: (lmap[s.id] || []).length - 12 })"></a>
             </div>
           </li>
         </template>
@@ -55,41 +57,41 @@
 
   <template x-if="id">
     <div style="display:contents">
-      <a class="back" href="multiplex.html"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>Todos los multiplex</a>
-      <p class="empty" x-show="missing"><b>No encontramos este multiplex</b><br>Puede que el enlace esté incompleto. <a class="link" href="multiplex.html">Ver todos los multiplex</a></p>
+      <a class="back" href="multiplex.html"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg><span x-text="$t('mx.all')"></span></a>
+      <p class="empty" x-show="missing"><b x-text="$t('mx.nf_t')"></b><br><span x-text="$t('mx.nf_d')"></span> <a class="link" href="multiplex.html" x-text="$t('mx.see_all')"></a></p>
       <template x-if="site">
         <div style="display:contents">
           <header class="mxh">
             <h1><span>Multiplex</span><span x-text="site.name"></span></h1>
             <p><b x-text="addr(site).place"></b><span x-text="addr(site).street"></span></p>
             <div class="mxh-acts">
-              <a class="go" :href="mapsUrl(site)" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Cómo llegar</a>
-              <span class="dist" x-show="$store.geo.km(site)" x-text="'A ' + $store.geo.km(site) + ' de ti'"></span>
+              <a class="go" :href="mapsUrl(site)" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span x-text="$t('mx.directions')"></span></a>
+              <span class="dist" x-show="$store.geo.km(site)" x-text="$t('mx.away', { km: $store.geo.km(site) })"></span>
             </div>
           </header>
 
-          <div class="empty" x-show="closed"><b>Sin funciones esta semana</b><br>Este multiplex no tiene horarios publicados del <span x-text="fmtRelease(WEEK[0], 1)"></span> al <span x-text="fmtRelease(WEEK[6], 1)"></span>.<div class="empty-acts"><a class="btn" href="multiplex.html" @click="$store.city.pick(city.slug)">Ver otros multiplex</a><a class="link" href="index.html">Ver cartelera</a></div></div>
+          <div class="empty" x-show="closed"><b x-text="$t('mx.none_week')"></b><br><span x-text="$t('mx.none_week_d', { from: fmtRelease(WEEK[0], 1), to: fmtRelease(WEEK[6], 1) })"></span><div class="empty-acts"><a class="btn" href="multiplex.html" @click="$store.city.pick(city.slug)" x-text="$t('mx.others')"></a><a class="link" href="index.html" x-text="$t('see_cartelera')"></a></div></div>
 
           <section class="sched" x-show="ready && !closed" aria-labelledby="h-hor">
-            <h2 class="sec" id="h-hor">Horarios</h2>
-            <div class="dates" role="tablist" aria-label="Día" @keydown="tabKeys($event)">
+            <h2 class="sec" id="h-hor" x-text="$t('st.title')"></h2>
+            <div class="dates" role="tablist" :aria-label="$t('st.day')" @keydown="tabKeys($event)">
               <template x-for="(d, i) in WEEK" :key="d">
                 <button class="date" role="tab" :id="'d' + i" aria-controls="sched" :class="{ none: D[i] && !D[i].length, unk: !D[i] }" :aria-selected="sel === i" :tabindex="sel === i ? 0 : -1" @click="pick(i)"
-                  :aria-label="fmtDate(d).label + ' ' + fmtDate(d).day + (D[i] && !D[i].length ? ', sin funciones' : '')"><small x-text="fmtDate(d).label"></small><b x-text="fmtDate(d).day"></b></button>
+                  :aria-label="fmtDate(d).label + ' ' + fmtDate(d).day + (D[i] && !D[i].length ? ', ' + $t('st.none_short') : '')"><small x-text="fmtDate(d).label"></small><b x-text="fmtDate(d).day"></b></button>
               </template>
             </div>
             <div id="sched" role="tabpanel" :aria-labelledby="'d' + sel" class="sched">
               <p class="sum" x-show="summary" x-text="summary"></p>
-              <div class="chips" x-show="attrs.length || isToday || film" role="group" aria-label="Filtrar funciones">
-                <button class="chip" x-show="film" aria-pressed="true" @click="clearFilm()" :aria-label="'Quitar filtro: ' + filmTitle"><span x-text="filmTitle"></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-                <button class="chip" x-show="isToday" :aria-pressed="now + ''" @click="now = !now"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Ahora</button>
+              <div class="chips" x-show="attrs.length || isToday || film" role="group" :aria-label="$t('st.filter')">
+                <button class="chip" x-show="film" aria-pressed="true" @click="clearFilm()" :aria-label="$t('st.clear_one', { name: filmTitle })"><span x-text="filmTitle"></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+                <button class="chip" x-show="isToday" :aria-pressed="now + ''" @click="now = !now"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span x-text="$t('st.now')"></span></button>
                 <template x-for="a in attrs" :key="a"><button class="chip" :aria-pressed="f.includes(a) + ''" @click="f = f.includes(a) ? f.filter(x => x !== a) : [...f, a]" x-text="attrLabel(a)"></button></template>
               </div>
 
               <section class="nx" x-show="next.length" aria-labelledby="h-nx">
-                <h3 id="h-nx" x-text="'Próximas funciones · ' + (isToday ? 'hoy' : fmtDate(WEEK[sel]).label.toLowerCase() + ' ' + fmtDate(WEEK[sel]).day)"></h3>
+                <h3 id="h-nx" x-text="$t('st.next', { when: isToday ? $t('date.today_l') : dl(sel) })"></h3>
                 <template x-for="n in next" :key="n.s.id">
-                  <a class="nx-r" :href="'boleta.html?show=' + n.s.id"><b x-text="n.s.time"></b><span><span x-text="n.f.title"></span><small x-text="n.s.attrs.join(' ')"></small></span><em x-text="isToday ? rel(n.s.time) : ''"></em></a>
+                  <a class="nx-r" :href="'boleta.html?show=' + n.s.id"><b x-text="n.s.time"></b><span><span x-text="n.f.title"></span><small x-text="n.s.attrs.map(attrShort).join(' ')"></small></span><em x-text="isToday ? rel(n.s.time) : ''"></em></a>
                 </template>
               </section>
 
@@ -99,26 +101,26 @@
                   <div class="fr-b">
                     <span class="tag" x-show="filmTag(g.f)" x-text="filmTag(g.f)"></span>
                     <h3><a :href="'pelicula.html?id=' + g.f.id" x-text="g.f.title"></a></h3>
-                    <div class="meta"><span class="rate" x-show="rateLabel(g.f.rating)" x-text="rateLabel(g.f.rating)"></span><span x-text="[fmtRuntime(g.f.runtime), g.f.genres.slice(0, 2).join(', ')].filter(Boolean).join(' · ')"></span></div>
+                    <div class="meta"><span class="rate" x-show="rateLabel(g.f.rating)" x-text="rateLabel(g.f.rating)"></span><span x-text="[fmtRuntime(g.f.runtime), genres(g.f, 2)].filter(Boolean).join(' · ')"></span></div>
                   </div>
                   <div class="sts">
                     <template x-for="s in g.times" :key="s.id">
                       <a class="st" :class="{ past: past(s), next: next[0] && next[0].s === s }" :href="s.soldOut || past(s) ? null : 'boleta.html?show=' + s.id" :aria-disabled="(s.soldOut || past(s)) + ''"
-                        :aria-label="s.time + ', ' + (s.soldOut ? 'agotada' : past(s) ? 'ya comenzó' : tags(s) + ', ' + price(s) + (low(s) ? ', pocas sillas' : '') + ', comprar')">
-                        <span class="st-k" x-show="next[0] && next[0].s === s">Próxima</span>
+                        :aria-label="s.time + ', ' + (s.soldOut ? $t('st.sold_l') : past(s) ? $t('st.started') : tags(s) + ', ' + price(s) + (low(s) ? ', ' + $t('st.few_l') : '') + ', ' + $t('st.buy'))">
+                        <span class="st-k" x-show="next[0] && next[0].s === s" x-text="$t('st.next1')"></span>
                         <b x-text="s.time"></b>
-                        <small class="st-p" x-text="s.soldOut ? 'Agotada' : price(s)"></small>
-                        <span class="st-t"><template x-for="a in s.attrs.filter(a => a !== '2D')" :key="a"><i :class="{ x: !LANG.includes(a) }" x-text="a === 'Imax' ? 'IMAX' : a"></i></template></span>
-                        <em class="st-l" x-show="low(s)">Pocas sillas</em>
+                        <small class="st-p" x-text="s.soldOut ? $t('st.sold') : price(s)"></small>
+                        <span class="st-t"><template x-for="a in s.attrs.filter(a => a !== '2D')" :key="a"><i :class="{ x: !LANG.includes(a) }" x-text="attrShort(a)"></i></template></span>
+                        <em class="st-l" x-show="low(s)" x-text="$t('st.few')"></em>
                       </a>
                     </template>
                   </div>
                 </article>
               </template>
 
-              <button class="link all" x-show="film && list.length" @click="clearFilm()">Mostrar todas las películas</button>
-              <div class="empty" x-show="D[sel] && !D[sel].length && (alt >= 0 || film)"><b x-text="film ? filmTitle + ' no tiene funciones aquí este día' : 'No hay funciones este día'"></b><br><span x-text="film && alt < 0 ? 'Tampoco en el resto de la semana.' : 'Los horarios de este día aún no están publicados.'"></span><div class="empty-acts"><button class="btn" x-show="alt >= 0" @click="pick(alt)" x-text="alt >= 0 ? 'Ver ' + fmtDate(WEEK[alt]).label.toLowerCase() + ' ' + fmtDate(WEEK[alt]).day : ''"></button><button class="link" x-show="film" @click="clearFilm()">Mostrar todas las películas</button></div></div>
-              <div class="empty" x-show="D[sel] && D[sel].length && !list.length"><b>Ninguna función con estos filtros</b><div class="empty-acts"><button class="btn" @click="f = []; now = false">Quitar filtros</button></div></div>
+              <button class="link all" x-show="film && list.length" @click="clearFilm()" x-text="$t('mx.all_films')"></button>
+              <div class="empty" x-show="D[sel] && !D[sel].length && (alt >= 0 || film)"><b x-text="film ? $t('mx.film_none', { title: filmTitle }) : $t('mx.day_none')"></b><br><span x-text="$t(film && alt < 0 ? 'mx.week_none' : 'st.unpublished')"></span><div class="empty-acts"><button class="btn" x-show="alt >= 0" @click="pick(alt)" x-text="alt >= 0 ? $t('st.see_day', { day: dl(alt) }) : ''"></button><button class="link" x-show="film" @click="clearFilm()" x-text="$t('mx.all_films')"></button></div></div>
+              <div class="empty" x-show="D[sel] && D[sel].length && !list.length"><b x-text="$t('st.none_filter')"></b><div class="empty-acts"><button class="btn" @click="f = []; now = false" x-text="$t('st.clear')"></button></div></div>
             </div>
           </section>
         </div>
@@ -127,8 +129,8 @@
   </template>
 </main>
 
-<nav class="tabbar" aria-label="Principal">
-  <a href="index.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 4v5M16 4v5"/></svg>Cartelera</a>
+<nav class="tabbar" aria-label="Principal" data-i18n-a="aria-label:nav.main">
+  <a href="index.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 4v5M16 4v5"/></svg><span data-i18n="nav.cartelera">Cartelera</span></a>
   <a href="multiplex.html" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Multiplex</a>
 </nav>
 <script>
@@ -149,7 +151,7 @@ function mxp() {
       const [cities, d] = await Promise.all([loadJSON('data/cities.json'), loadJSON('data/films.json')]);
       for (const c of (Array.isArray(cities) ? cities : [])) { const s = c.sites.find(s => s.id === this.id); if (s) { this.site = s; city = this.city = c; break; } }
       if (!this.site) { this.missing = true; return; }
-      document.title = 'Multiplex ' + this.site.name + ' · Cine Colombia';
+      ownTitle(); document.title = 'Multiplex ' + this.site.name + ' · Cine Colombia';
       if (!this.$store.city.slug) this.$store.city.pick(city.slug); // no saved city yet: use this one instead of the IP guess (and its toast)
       (d.films || []).forEach(x => { films[x.id] = x; });
       if (!listed(films[this.film])) this.film = null;
@@ -182,9 +184,9 @@ function mxp() {
       }
     },
     lsub(s) {
-      const n = (this.lmap[s.id] || []).length, d = this.lday >= 0 && this.lday < 7 ? fmtDate(WEEK[this.lday]) : null, when = d ? d.label.toLowerCase() + ' ' + d.day : '';
-      if (n) return n + (n > 1 ? ' películas' : ' película') + ' · ' + when;
-      return d && this.lweek && this.lweek.has(s.id) ? 'Sin funciones ' + when : 'Sin funciones esta semana';
+      const n = (this.lmap[s.id] || []).length, d = this.lday >= 0 && this.lday < 7 ? fmtDate(WEEK[this.lday]) : null, when = d ? d.low + ' ' + d.day : '';
+      if (n) return t('feed.n_films', { n }) + ' · ' + when;
+      return d && this.lweek && this.lweek.has(s.id) ? t('mx.none_when', { when }) : t('mx.none_week');
     },
     async day(i) {
       if (this.days[i]) return this.days[i];
@@ -201,7 +203,8 @@ function mxp() {
     get closed() { return this.days.every(d => d && !d.length); },
     get alt() { const a = this.D.map((d, k) => (d && d.length ? k : -1)).filter(k => k >= 0); return a.find(k => k > this.sel) ?? a.pop() ?? -1; },
     past(s) { return this.isToday && s.time < this.t; },
-    rel(time) { const [h, m] = time.split(':'), [H, M] = this.t.split(':'), n = (h - H) * 60 + (m - M); return n >= 0 && n < 90 ? 'en ' + n + ' min' : ''; },
+    rel(time) { const [h, m] = time.split(':'), [H, M] = this.t.split(':'), n = (h - H) * 60 + (m - M); return n >= 0 && n < 90 ? t('st.in_min', { n }) : ''; },
+    dl(i) { const d = fmtDate(WEEK[i]); return d.low + ' ' + d.day; },
     get attrs() { // same rule as pelicula.html: only the formats/languages that split the day
       const n = {}, r = (this.D[this.sel] || []).flatMap(g => g.times);
       r.forEach(s => s.attrs.forEach(a => { n[a] = (n[a] || 0) + 1; }));
@@ -214,13 +217,13 @@ function mxp() {
     },
     get list() { return (this.D[this.sel] || []).map(g => ({ f: g.f, times: g.times.filter(s => this.ok(s)) })).filter(g => g.times.length); },
     get summary() {
-      const t = this.list.flatMap(g => g.times.map(s => s.time)).sort(byTime), n = this.list.length;
-      return t.length ? n + (n > 1 ? ' películas' : ' película') + ' · ' + t.length + (t.length > 1 ? ' funciones' : ' función') + ' · desde ' + t[0] + ' hasta ' + t[t.length - 1] : '';
+      const tm = this.list.flatMap(g => g.times.map(s => s.time)).sort(byTime), n = this.list.length;
+      return tm.length ? t('feed.n_films', { n }) + ' · ' + t('st.n_shows', { n: tm.length }) + ' · ' + t('st.range', { from: tm[0], to: tm[tm.length - 1] }) : '';
     },
     get next() { // selected day: 3 soonest on sale (today: still ahead), same rule as pelicula.html
       return (this.D[this.sel] || []).flatMap(g => g.times.filter(s => !s.soldOut && !this.past(s)).map(s => ({ s, f: g.f }))).sort((a, b) => byTime(a.s.time, b.s.time)).slice(0, 3);
     },
-    tags(s) { return s.attrs.filter(a => a !== '2D').join(' · ') || '2D'; },
+    tags(s) { return s.attrs.filter(a => a !== '2D').map(attrLabel).join(' · ') || '2D'; },
     // same price lookup as boleta.js / pelicula.html
     price(s) {
       const PR = this.PR, D = PR && PR._default, key = s.attrs.filter(a => !LANG.includes(a)).join(' ');
@@ -228,7 +231,7 @@ function mxp() {
       const bands = (PR[this.id] || {})[key] || (Array.isArray(D) ? D : D && (D[key] || D['2D'])) || [];
       const b = bands.filter(x => x.from <= s.time).pop() || bands[0];
       const n = b && b.prices && b.prices.length ? Math.min(...b.prices.map(x => x.price)) : BASE[['Onyx', 'Imax', 'Megasala', 'Dinamix', '3D'].find(f => s.attrs.includes(f)) || '2D'];
-      return 'desde $ ' + n.toLocaleString('es-CO');
+      return t('st.from', { price: cop(n) });
     },
     // demo: ~1 in 5 "Pocas sillas" (boleta.js hash, same flag as pelicula.html)
     low(s) { let x = 2166136261; for (const c of s.id + 'p') x = Math.imul(x ^ c.charCodeAt(0), 16777619); return !s.soldOut && !this.past(s) && (x >>> 0) % 5 === 0; },

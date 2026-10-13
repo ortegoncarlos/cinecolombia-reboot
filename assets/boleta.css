@@ -2,7 +2,8 @@
 .bol{--hl:rgba(201,205,214,.7);--lo:rgba(201,205,214,.16);--hh:calc(58px + env(safe-area-inset-top));min-height:100svh}
 .bol-page .toast{bottom:calc(132px + env(safe-area-inset-bottom))}
 
-.bh{position:sticky;top:0;z-index:10;padding:calc(6px + env(safe-area-inset-top)) 8px 6px;display:grid;grid-template-columns:44px 1fr;align-items:center;column-gap:4px;background:rgba(0,0,0,.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 1px 0 var(--line)}
+.bh{position:sticky;top:0;z-index:10;padding:calc(6px + env(safe-area-inset-top)) 8px 6px;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;column-gap:4px;background:rgba(0,0,0,.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 1px 0 var(--line)}
+.bh>.lmenu{grid-row:1;grid-column:3}
 .bh-f{display:flex;align-items:center;gap:10px;min-width:0}
 .bh-f img{width:30px;height:45px;object-fit:cover;border-radius:5px;box-shadow:0 0 0 1px var(--line);background:var(--navy)}
 .bh-f div{display:grid;min-width:0;line-height:1.25}
@@ -149,7 +150,8 @@
   .btn:not(:disabled):hover{background:#0a7fd0}
 }
 @media (min-width:768px){
-  .bh{padding-left:max(16px,(100% - 1104px)/2);padding-right:max(16px,(100% - 1104px)/2);grid-template-columns:44px 1fr auto}
+  .bh{padding-left:max(16px,(100% - 1104px)/2);padding-right:max(16px,(100% - 1104px)/2);grid-template-columns:44px 1fr auto 44px}
+  .bh>.lmenu{grid-column:4}
   .steps{grid-column:auto;margin:0;width:360px}
   .bol-main{max-width:1104px;margin:auto;padding:24px 16px 48px;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:32px;align-items:start}
   .bol-step{max-width:720px;width:100%;margin:0 auto}
@@ -168,6 +170,8 @@
 /* ---------- Desktop (≥1024px): film + steps bar under the app bar, map ≤820px, summary column, ticket centred ---------- */
 @media (min-width:1024px){
   .bh{top:var(--bar);padding:8px var(--gut);background:rgba(0,0,0,.92)}
+  .bh{grid-template-columns:44px 1fr auto}
+  .bh>.lmenu{display:none} /* the app bar has it */
   .bh-f b{font-size:16px}
   .steps{width:480px}
   .steps li{font-size:13px;padding-top:8px}

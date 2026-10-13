@@ -17,6 +17,52 @@ function loadJSON(url) {
 
 function getQueryParam(k) { return new URLSearchParams(location.search).get(k); }
 
+/* i18n: t(key, vars) over data/i18n/{lang}.json; Spanish (es.json) is the source and the fallback (missing key → Spanish → key).
+   Language: ?lang= (saved), then the saved choice, then the browser; Alpine.start waits for the dictionaries (no flash of Spanish).
+   {name} interpolates vars; a numeric vars.n picks key_one / key_other via Intl.PluralRules. */
+const LOCALE = { es: 'es-CO', en: 'en-US', fr: 'fr-FR', pt: 'pt-BR', zh: 'zh-CN' };
+const LANGS = [['es', 'Español'], ['en', 'English'], ['fr', 'Français'], ['pt', 'Português'], ['zh', '中文']];
+if (LOCALE[getQueryParam('lang')]) ls.set('cineco.lang', getQueryParam('lang'));
+const I18N = { d: {}, es: {}, lang: [ls.get('cineco.lang'), ...(navigator.languages || [navigator.language])].map(l => String(l || '').slice(0, 2).toLowerCase()).find(l => LOCALE[l]) || 'es' };
+const rev = () => window.Alpine && Alpine.store('i18n') && Alpine.store('i18n').rev; // read in t(): Alpine effects re-render on a language swap
+function t(k, v = {}) {
+  rev();
+  const sfx = typeof v.n === 'number' ? ['_' + new Intl.PluralRules(LOCALE[I18N.lang]).select(v.n), '_other', ''] : [''];
+  let s;
+  [I18N.d, I18N.es].some(D => sfx.some(x => (s = D[k + x]) != null));
+  return String(s ?? k).replace(/\{(\w+)\}/g, (m, x) => v[x] ?? m);
+}
+const tOr = (k, fb) => { const s = t(k); return s === k ? fb : s; }; // data labels: unknown value → shown as is
+const loc = () => (rev(), LOCALE[I18N.lang]);
+// Static markup: data-i18n="…" (text) and data-i18n-a="attr:…" (attribute).
+function i18nStatic() {
+  document.documentElement.lang = LOCALE[I18N.lang];
+  document.querySelectorAll('[data-i18n]').forEach(e => { e.textContent = t(e.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-a]').forEach(e => { const [a, k] = e.dataset.i18nA.split(':'); e.setAttribute(a, t(k)); });
+}
+// A page that sets its own <title>/description (film, multiplex, show) takes them out of the language swap.
+const ownTitle = () => ['title', 'meta[name=description]'].forEach(q => { const e = document.querySelector(q); if (e) { e.removeAttribute('data-i18n'); e.removeAttribute('data-i18n-a'); } });
+const dict = l => loadJSON('data/i18n/' + l + '.json');
+const I18N_READY = Promise.all([dict('es'), dict(I18N.lang)]).then(([es, d]) => { I18N.es = es; I18N.d = d; i18nStatic(); });
+// Alpine (the next deferred script) assigns window.Alpine and starts on a microtask: hold start() until the dictionaries are in.
+// The page stays hidden until then (app.css html:not(.rdy)); 4 s safety in case Alpine never loads.
+const shown = () => document.documentElement.classList.add('rdy');
+setTimeout(shown, 4000);
+Object.defineProperty(window, 'Alpine', { configurable: true, set(A) {
+  const s = A.start.bind(A); A.start = () => I18N_READY.then(() => { s(); shown(); });
+  Object.defineProperty(window, 'Alpine', { value: A, writable: true, configurable: true });
+} });
+// Live swap from the city sheet: new dictionary, static markup, then every Alpine binding that called t() re-renders.
+async function setLang(l) {
+  if (!LOCALE[l]) return;
+  I18N.d = await dict(l); I18N.lang = l; ls.set('cineco.lang', l);
+  const u = new URL(location.href);
+  if (u.searchParams.has('lang')) { u.searchParams.set('lang', l); history.replaceState(history.state, '', u); }
+  i18nStatic();
+  const st = Alpine.store('i18n'); st.lang = l; st.rev++;
+  dispatchEvent(new Event('langchange')); // non-reactive bits (boleta's seat map)
+}
+
 function isoDateInBogota(offsetDays = 0) {
   // Bogotá has no DST, so adding whole days in ms is safe.
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date(appNow().getTime() + offsetDays * 864e5));
@@ -24,39 +70,42 @@ function isoDateInBogota(offsetDays = 0) {
 
 const TODAY = isoDateInBogota(0);
 const WEEK = [0, 1, 2, 3, 4, 5, 6].map(isoDateInBogota); // showtime window: today + 0…6
-const DAYS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
-const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const NC = navigator.connection, NOAUTO = RM || NC && (NC.saveData || /2g/.test(NC.effectiveType)); // no trailer autoplay/preload
 const BD = innerWidth < 768 ? 'w780' : 'w1280'; // backdrops
 const utc = iso => new Date(iso + 'T12:00:00Z');
 const cap = s => s[0].toUpperCase() + s.slice(1);
 
+const dtf = (iso, o) => new Intl.DateTimeFormat(loc(), { timeZone: 'UTC', ...o }).format(utc(iso));
+// label "Hoy"/"Mié" (strip), low "hoy"/"mié" (inside sentences), day 14
 function fmtDate(iso) {
-  const i = WEEK.indexOf(iso), d = utc(iso);
-  return { label: i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : cap(DAYS[d.getUTCDay()]), day: d.getUTCDate() };
+  const i = WEEK.indexOf(iso), wd = i > 1 || i < 0 ? dtf(iso, { weekday: 'short' }).replace(/\.$/, '') : '';
+  return { label: wd ? cap(wd) : t(i ? 'date.tomorrow' : 'date.today'), low: wd || t(i ? 'date.tomorrow_l' : 'date.today_l'), day: utc(iso).getUTCDate() };
 }
-function fmtRelease(iso, short) {
-  const d = utc(iso), m = MONTHS[d.getUTCMonth()];
-  return short ? d.getUTCDate() + ' ' + m.slice(0, 3) : d.getUTCDate() + ' de ' + m;
-}
+// "14 de octubre" / short "14 oct"
+function fmtRelease(iso, short) { return short ? dtf(iso, { day: 'numeric', month: 'short' }).replace(' de ', ' ') : dtf(iso, { day: 'numeric', month: 'long' }); }
 function fmtRuntime(m) {
   if (!m) return '';
-  return m < 60 ? m + ' min' : Math.floor(m / 60) + 'h' + (m % 60 ? ' ' + (m % 60) + 'min' : '');
+  const h = Math.floor(m / 60), r = m % 60;
+  return t(h ? r ? 'fmt.hm' : 'fmt.h' : 'fmt.m', { h, m: r });
 }
-function rateLabel(r) { return r.minAge ? '+' + r.minAge : r.text === 'Pendiente' ? '' : r.text; }
+const cop = n => new Intl.NumberFormat(loc(), { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+function rateLabel(r) { return r.minAge ? '+' + r.minAge : r.text === 'Pendiente' ? '' : r.text === 'Todos' ? t('rating.all') : r.text; }
 // One tag at a time: Preventa wins over Estreno (released within the last 7 days).
 function filmTag(f) {
-  if (f.status === 'preventa') return 'Preventa';
+  if (f.status === 'preventa') return t('tag.presale');
   const ago = (utc(TODAY) - utc(f.releaseDate)) / 864e5;
-  return f.status === 'cartelera' && ago >= 0 && ago <= 7 ? 'Estreno' : '';
+  return f.status === 'cartelera' && ago >= 0 && ago <= 7 ? t('tag.new') : '';
 }
 // Hidden films (data flag) never show anywhere: feed, search, detail, multiplex schedules. Filter every film list through this.
 const listed = f => !!f && !f.hidden;
 // One spelling per format/language everywhere: the data mixes "Subtitulado" (films) with SUB/DOB codes (showtimes).
-const ATTR = { Subtitulado: 'Subtitulada', SUB: 'Subtitulada', DOB: 'Doblada', ESP: 'Español', Imax: 'IMAX', IFV: 'Infinity Vision' };
-const attrLabel = a => ATTR[a] || a;
-function metaLine(f) { return [fmtRuntime(f.runtime), f.genres.join(', ')].filter(Boolean).join(' · '); }
+// Language codes → localised label (attrLabel) or short code (attrShort, showtime chips); brands stay.
+const ATTR = { Subtitulado: 'sub', SUB: 'sub', Doblada: 'dob', DOB: 'dob', Español: 'esp', ESP: 'esp' }, BRAND = { Imax: 'IMAX', IFV: 'Infinity Vision' };
+const attrLabel = a => ATTR[a] ? t('attr.' + ATTR[a]) : BRAND[a] || a;
+const attrShort = a => ATTR[a] ? t('attr.' + ATTR[a] + '_s') : a === 'Imax' ? 'IMAX' : a;
+const genres = (f, n = 9) => f.genres.slice(0, n).map(g => tOr('genre.' + g, g)).join(t('fmt.sep'));
+function metaLine(f) { return [fmtRuntime(f.runtime), genres(f)].filter(Boolean).join(' · '); }
 // TMDB sizes differ per image type: a poster used as hero (stored at w780) has no w1280 rendition.
 function imgSize(url, size) { return url && url.replace(/(image\.tmdb\.org\/t\/p\/)w\d+/, '$1' + (size === 'w1280' && /\/w780\//.test(url) ? 'w780' : size)); }
 function heroImg(f) { return f.hero || f.backdrop; } // hand-picked portrait-friendly still, else the TMDB backdrop
@@ -105,7 +154,7 @@ function haversineKm(a, b) {
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(dLng / 2) ** 2;
   return 12742 * Math.asin(Math.sqrt(h));
 }
-const fmtKm = k => k.toLocaleString('es-CO', { maximumFractionDigits: k < 10 ? 1 : 0 }) + ' km';
+const fmtKm = k => k.toLocaleString(loc(), { maximumFractionDigits: k < 10 ? 1 : 0 }) + ' km';
 const mapsUrl = s => (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? 'https://maps.apple.com/?q=' : 'https://www.google.com/maps/search/?api=1&query=') + s.lat + ',' + s.lng;
 // One day of showtimes for a city ({filmId: {siteId: [showings]}}), memoized; i = index in WEEK.
 // ponytail: snapshot ends 2026-10-17 (see README); later days read as empty without a 404. Update with the data.
@@ -126,7 +175,7 @@ const toastOff = () => { toastEl.classList.remove('on'); const b = toastEl.query
 ['pointerleave', 'focusout'].forEach(k => toastEl.addEventListener(k, () => { toast.t = setTimeout(toastOff, 2000); }));
 function toast(msg, action, ms = 2200) {
   const t = toastEl;
-  t.textContent = msg;
+  t.textContent = msg; delete t.dataset.sim;
   if (action) {
     const b = document.createElement('button');
     b.textContent = action[0]; b.onclick = () => { toastOff(); action[1](); };
@@ -160,11 +209,18 @@ async function guessCity(list) {
 const SITE_URL = 'https://ortegoncarlos.github.io/cinecolombia-reboot'; // share links use the static OG pages at /s/{id}/ (generated at deploy)
 async function shareFilm(f, url = SITE_URL + '/s/' + f.id + '/') {
   if (navigator.share) { try { await navigator.share({ title: f.title, text: f.shortSynopsis || f.title, url }); } catch (e) { /* cancelled */ } return; }
-  try { await navigator.clipboard.writeText(url); toast('Enlace copiado'); } catch (e) { toast(url); }
+  try { await navigator.clipboard.writeText(url); toast(t('toast.copied')); } catch (e) { toast(url); }
 }
 
 // Tablists (feed sections, search chips, day strips) and radio groups (payment): arrows/Home/End move and select;
 // only the selected item is tabbable (roving tabindex in the markup).
+// Menus: arrows/Home/End move focus only (picking is a click).
+function menuKeys(e) {
+  const b = [...e.currentTarget.querySelectorAll('button')], i = b.indexOf(document.activeElement);
+  const n = { ArrowDown: i + 1, ArrowRight: i + 1, ArrowUp: i - 1, ArrowLeft: i - 1, Home: 0, End: b.length - 1 }[e.key];
+  if (n == null) return;
+  e.preventDefault(); b[(n + b.length) % b.length].focus();
+}
 function tabKeys(e) {
   const tabs = [...e.currentTarget.querySelectorAll('[role=tab],[role=radio]')], i = tabs.indexOf(document.activeElement), r = tabs.length && tabs[0].getAttribute('role') === 'radio';
   const n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1, ...(r && { ArrowDown: i + 1, ArrowUp: i - 1 }) }[e.key];
@@ -183,16 +239,31 @@ function citySheet(el, on) {
   else if (opener) opener.focus();
 }
 
+// Language chips, one template: the city sheet's radio group and the top-right globe menu (menuitemradio).
+const langChips = (role, attrs) => `<template x-for="[k, n] in LANGS" :key="k"><button type="button" role="${role}" :lang="k" :aria-checked="$store.i18n.lang === k" ${attrs} x-text="n"></button></template>`;
+const LANG_BADGE = { es: 'ES', en: 'EN', fr: 'FR', pt: 'PT', zh: '中' };
+// Translate (文A) button + anchored menu; pages mark its spot with <span data-lang></span> (the desktop bar includes it).
+// Outside tap, Escape or picking closes it; focus goes back to the button.
+const LANG_MENU = `<div class="lmenu" x-data="{ open: false }" @keydown.escape="if (open) { open = false; $refs.b.focus() }" @click.outside="open = false" @focusout="$el.contains($event.relatedTarget) || (open = false)">
+  <button type="button" class="icon-btn lbtn" x-ref="b" aria-haspopup="menu" :aria-expanded="open + ''" :aria-label="$t('lang.label')" @click="open = !open; open && $nextTick(() => $refs.m.querySelector('[aria-checked=true]').focus())"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg><b class="lbadge" aria-hidden="true" x-text="LANG_BADGE[$store.i18n.lang]"></b></button>
+  <div class="lpop" role="menu" x-ref="m" x-show="open" x-cloak :aria-label="$t('lang.label')" @keydown="menuKeys($event)">${langChips('menuitemradio', 'tabindex="-1" @click="setLang(k); open = false; $refs.b.focus()"')}</div>
+</div>`;
+document.querySelectorAll('[data-lang]').forEach(e => { e.outerHTML = LANG_MENU; });
+
 // City bottom sheet, injected once per page.
 document.body.insertAdjacentHTML('beforeend', `
 <div class="sheet-bg" x-data x-show="$store.city.open" x-transition.opacity @click="$store.city.open=false" x-cloak></div>
 <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-t" x-data x-show="$store.city.open" x-cloak
   @keydown.escape.window="$store.city.open=false"
   x-effect="citySheet($el, $store.city.open && $store.city.list.length)">
-  <h2 id="sheet-t">Elige tu ciudad</h2>
+  <h2 id="sheet-l" class="sheet-l" x-text="$t('lang.title')"></h2>
+  <div class="chips langs" role="radiogroup" aria-labelledby="sheet-l" @keydown="tabKeys($event)">
+    ${langChips('radio', ':tabindex="$store.i18n.lang === k ? 0 : -1" @click="setLang(k)"')}
+  </div>
+  <h2 id="sheet-t" x-text="$t('city.choose')"></h2>
   <ul><template x-for="c in $store.city.list" :key="c.slug"><li>
     <button class="city-row" :aria-current="c.slug === $store.city.slug" @click="$store.city.pick(c.slug)">
-      <span x-text="c.name"></span><small x-text="c.sites.length + ' multiplex'"></small></button>
+      <span x-text="c.name"></span><small x-text="$t('city.n_sites', { n: c.sites.length })"></small></button>
   </li></template></ul>
 </div>`);
 
@@ -208,11 +279,13 @@ document.addEventListener('alpine:init', () => {
       const slug = await guessCity(this.list);
       if (this.slug) return; // picked by hand while we were guessing
       this.pick(this.list.some(c => c.slug === slug) ? slug : this.list[0].slug);
-      toast('Según tu ubicación aproximada (IP) te mostramos ' + this.cur.name, ['Cambiar', () => { this.open = true; }], 6000);
+      toast(t('toast.city_guess', { city: this.cur.name }), [t('toast.change'), () => { this.open = true; }], 6000);
     },
     pick(slug) { this.slug = slug; ls.set('cineco.city', slug); this.open = false; }
   });
 
+  Alpine.store('i18n', { lang: I18N.lang, rev: 0 });
+  Alpine.magic('t', () => t);
   Alpine.store('shell', { cur: document.body.dataset.nav || '' }); // desktop app bar: current section
 
   Alpine.store('geo', {
@@ -220,27 +293,26 @@ document.addEventListener('alpine:init', () => {
     init() { try { this.pos = JSON.parse(ls.get('cineco.geo')); } catch (e) { /* corrupt */ } },
     set(p) { this.pos = p; ls.set('cineco.geo', JSON.stringify(p)); },
     ask() {
-      if (!navigator.geolocation) return toast('Tu navegador no comparte ubicación');
+      if (!navigator.geolocation) return toast(t('toast.geo_unsupported'));
       this.busy = true;
       navigator.geolocation.getCurrentPosition(
         p => { this.set({ lat: p.coords.latitude, lng: p.coords.longitude, src: 'gps', t: Date.now() }); this.busy = false; },
-        () => { this.busy = false; toast('No pudimos obtener tu ubicación'); },
+        () => { this.busy = false; toast(t('toast.geo_failed')); },
         { timeout: 10000, maximumAge: 600000 });
     },
     // Within 150 km only; otherwise data order, no distance.
     d(s) { const k = this.pos ? haversineKm(this.pos, s) : 1e9; return k <= 150 ? k : null; },
-    km(s) { const k = this.d(s); return k == null ? '' : fmtKm(k) + (this.pos.src === 'ip' ? ' aprox.' : ''); },
+    km(s) { const k = this.d(s); return k == null ? '' : this.pos.src === 'ip' ? t('geo.km_ip', { km: fmtKm(k) }) : fmtKm(k); },
     sort(sites) { return sites.some(s => this.d(s) != null) ? [...sites].sort((a, b) => this.d(a) - this.d(b)) : sites; }
   });
 });
 
 /* ---------- Feed ---------- */
-const SECTIONS = {
-  cartelera: ['Cartelera', 'En salas esta semana.'],
-  preventa: ['Preventa', 'Asegura tu silla antes del estreno.'],
-  pronto: ['Pronto', 'Lo que llega a Cine Colombia en las próximas semanas.'],
-  alternativo: ['Alternativo', 'Cineco Alternativo: ópera, teatro, conciertos y arte.']
-};
+// Feed sections; names and blurbs are t('sec.' + key) / t('sec.' + key + '_d').
+const SECTIONS = { cartelera: 1, preventa: 1, pronto: 1, alternativo: 1 };
+// City pill (feed, multiplex, desktop bar): current city or the prompt.
+const cityName = () => { const c = Alpine.store('city').cur; return c ? c.name : t('city.choose'); };
+const cityAria = () => { const c = Alpine.store('city').cur; return c ? t('city.choose_cur', { city: c.name }) : t('city.choose'); };
 const altLabel = f => 'Cineco Alternativo' + (f.event ? ' · ' + f.event : '');
 
 // Desktop app bar (≥1024px; display:none below, so the mobile pages are untouched). On the feed, the section links
@@ -249,13 +321,14 @@ const DESK = matchMedia('(min-width:1024px)');
 document.body.insertAdjacentHTML('afterbegin', `
 <header class="dbar" x-data><div class="dbar-in">
   <a class="dbar-logo" href="index.html"><img class="logo" src="assets/logo-blanco.png" alt="Cine Colombia" width="108" height="28" loading="lazy"></a>
-  <nav class="dnav" aria-label="Principal">${[...Object.keys(SECTIONS), 'multiplex'].map(t =>
-    `<a href="${t === 'multiplex' ? 'multiplex.html' : 'index.html#' + t}" :aria-current="$store.shell.cur === '${t}' && 'page'">${t === 'multiplex' ? 'Multiplex' : SECTIONS[t][0]}</a>`).join('')}</nav>
-  <button class="pill" @click="$store.city.open = true" :aria-label="'Elige tu ciudad' + ($store.city.cur ? ', actual ' + $store.city.cur.name : '')">
+  <nav class="dnav" :aria-label="$t('nav.main')">${[...Object.keys(SECTIONS), 'multiplex'].map(k =>
+    `<a href="${k === 'multiplex' ? 'multiplex.html' : 'index.html#' + k}" :aria-current="$store.shell.cur === '${k}' && 'page'"${k === 'multiplex' ? '>Multiplex' : ` x-text="$t('sec.${k}')">`}</a>`).join('')}</nav>
+  <button class="pill" @click="$store.city.open = true" :aria-label="cityAria()">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
-    <span x-text="$store.city.cur ? $store.city.cur.name : 'Elige tu ciudad'">Elige tu ciudad</span>
+    <span x-text="cityName()"></span>
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-  <a class="icon-btn" href="index.html#buscar" data-search aria-label="Buscar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></a>
+  <a class="icon-btn" href="index.html#buscar" data-search :aria-label="$t('search.open')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></a>
+  ${LANG_MENU}
 </div></header>`);
 
 function feed() {
@@ -331,10 +404,10 @@ function feed() {
     },
     get upFrom() { return Math.max(0, Math.min(this.active - 1, this.queue.length - 6)); },
     upKick(it) {
-      if (it.f) return [filmTag(it.f) || (it.f.alt ? 'Alternativo' : ''), fmtRuntime(it.f.runtime)].filter(Boolean).join(' · ');
-      return it.p ? 'TikTok' : it.type === 'div' ? 'Sección · ' + it.count + (it.count === 1 ? ' película' : ' películas') : '';
+      if (it.f) return [filmTag(it.f) || (it.f.alt ? t('sec.alternativo') : ''), fmtRuntime(it.f.runtime)].filter(Boolean).join(' · ');
+      return it.p ? 'TikTok' : it.type === 'div' ? t('feed.section') + ' · ' + t('feed.n_films', { n: it.count }) : '';
     },
-    upTitle(it) { return (it.f || it.p || it).title || (it.type === 'end' ? 'Fin de la cartelera' : this.emptyText()[0]); },
+    upTitle(it) { return (it.f || it.p || {}).title || (it.sec ? t('sec.' + it.sec) : it.type === 'end' ? t('feed.end_short') : this.emptyText()[0]); },
     obs(el) { io.observe(el); },
 
     build() {
@@ -350,7 +423,7 @@ function feed() {
         const list = this.films.filter(f => (alt ? f.alt : f.status === t) && (t !== 'cartelera' || ids.has(f.id)) && !feat.includes(f));
         if (alt) list.sort((a, b) => O.indexOf(a.status) - O.indexOf(b.status) || a.releaseDate.localeCompare(b.releaseDate));
         if (!list.length) { if (!out.length) out.push({ type: 'empty', key: 'empty' }); return; }
-        if (k) out.push({ type: 'div', key: 'd' + t, title: SECTIONS[t][0], text: SECTIONS[t][1], count: list.length });
+        if (k) out.push({ type: 'div', key: 'd' + t, sec: t, count: list.length });
         list.forEach(f => out.push({ type: 'film', key: f.id, f }));
       });
       if (cart) {
@@ -405,7 +478,7 @@ function feed() {
       dbg('play', v.n, v.i, 'muted=' + v.muted);
       v.play().catch(e => { dbg('refused', e.name, 'muted=' + v.muted); if (e.name === 'AbortError') return; if (!v.muted) { v.muted = true; this.pm = true; v.play().catch(() => this.refused()); } else this.refused(); }); // AbortError: superseded by a newer load (rebuild)
     },
-    refused() { if (V[cur].i !== this.active) return; this.wait = 1; dbg('wait'); if (!told) told = toast('Toca ▶ para ver el tráiler', null, 5000) || 1; },
+    refused() { if (V[cur].i !== this.active) return; this.wait = 1; dbg('wait'); if (!told) told = toast(t('feed.tap_play'), null, 5000) || 1; },
     // 10 s without `playing` on a card with a clip: one more muted play(); still nothing → ▶ (never while the file is still loading).
     check(i) { const v = V[cur]; if (this.active !== i || this.playing || v.i !== i) return; dbg('check', 'rs=' + v.readyState, 'paused=' + v.paused); if (v.readyState < 2) return; v.muted = true; this.pm = true; v.play().catch(() => this.refused()); ck = setTimeout(() => { if (!this.playing && this.active === i) this.refused(); }, 3000); },
     tapPlay() { const v = V[cur]; this.wait = 2; dbg('tap'); this.unl = true; v.muted = !this.soundOn; this.pm = v.muted; v.play().catch(() => { this.wait = 1; }); },
@@ -435,11 +508,11 @@ function feed() {
     // Native fullscreen of the active clip (iPhone: webkitEnterFullscreen with the system controls; elsewhere requestFullscreen).
     fsOn() { const v = V[cur]; if (v.i !== this.active) return; this.fs = true; this.wake(); if (v.webkitEnterFullscreen && !document.fullscreenEnabled) v.webkitEnterFullscreen(); else if (v.requestFullscreen) v.requestFullscreen().catch(() => { this.fs = false; }); },
     fsOff() { this.fs = false; if (document.fullscreenElement) document.exitFullscreen(); },
-    next(i) { const n = this.queue[i + 1]; return n && (n.f || n.p || n).title || ''; },
+    next(i) { const n = this.queue[i + 1]; return !n ? '' : (n.f || n.p) ? (n.f || n.p).title : n.sec ? t('sec.' + n.sec) : ''; },
     emptyText() {
       const c = this.$store.city.cur;
-      if (!c) return ['Elige tu ciudad', 'Así te mostramos la cartelera de tus multiplex.'];
-      return ['Aún no hay funciones en ' + c.name, 'Prueba con otra ciudad o mira lo que llega pronto.'];
+      if (!c) return [t('city.choose'), t('feed.empty_nocity')];
+      return [t('feed.empty_t', { city: c.name }), t('feed.empty_d')];
     },
     // Search = full-screen browse of every film for the city (history entry, so the back gesture closes it).
     browse(on) {
