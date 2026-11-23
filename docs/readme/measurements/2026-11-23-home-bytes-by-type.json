@@ -1,0 +1,76 @@
+{
+  "date": "2026-11-23T16:25:03.413Z",
+  "note": "one cold load per URL, same settings as browser-load-times.json, bytes on the wire grouped by CDP resource type, counted until 5 s after load",
+  "original_home": {
+    "url": "https://www.cinecolombia.com/",
+    "byType": {
+      "Document": {
+        "requests": 1,
+        "bytes": 78777
+      },
+      "Stylesheet": {
+        "requests": 2,
+        "bytes": 32303
+      },
+      "Font": {
+        "requests": 1,
+        "bytes": 48637
+      },
+      "Image": {
+        "requests": 15,
+        "bytes": 666927
+      },
+      "Script": {
+        "requests": 21,
+        "bytes": 919768
+      },
+      "Fetch": {
+        "requests": 7,
+        "bytes": 6937
+      },
+      "Other": {
+        "requests": 1,
+        "bytes": 4603
+      }
+    },
+    "stylesheets": 2
+  },
+  "reboot_home": {
+    "url": "https://ortegoncarlos.github.io/cinecolombia-reboot/",
+    "byType": {
+      "Document": {
+        "requests": 1,
+        "bytes": 4832
+      },
+      "Stylesheet": {
+        "requests": 1,
+        "bytes": 8087
+      },
+      "Image": {
+        "requests": 6,
+        "bytes": 147064
+      },
+      "Other": {
+        "requests": 3,
+        "bytes": 93730
+      },
+      "Script": {
+        "requests": 5,
+        "bytes": 59280
+      },
+      "Font": {
+        "requests": 1,
+        "bytes": 37552
+      },
+      "Fetch": {
+        "requests": 2,
+        "bytes": 1406
+      },
+      "Media": {
+        "requests": 3,
+        "bytes": 6924484
+      }
+    },
+    "stylesheets": 1
+  }
+}
